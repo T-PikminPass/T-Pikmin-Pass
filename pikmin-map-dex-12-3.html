@@ -3,9 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>皮克敏純點地圖</title>
+<title>皮克敏純點地圖｜高雄</title>
+<meta name="description" content="Pikmin Bloom 高雄純點查詢地圖，社群整理的純點位置、類別與圖鑑收集進度，玩家自製非官方工具。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="皮克敏純點地圖｜高雄">
+<meta property="og:description" content="Pikmin Bloom 高雄純點查詢地圖。社群整理的純點位置、類別與圖鑑收集進度，玩家自製非官方工具。">
+<meta property="og:image" content="https://upload.wikimedia.org/wikipedia/en/9/9b/Pikmin_Bloom_icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="皮克敏純點地圖｜高雄">
+<meta name="twitter:description" content="Pikmin Bloom 高雄純點查詢地圖。社群整理的純點位置、類別與圖鑑收集進度。">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background:#f0f7ed;overflow:hidden;}
@@ -120,6 +131,8 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
 #locate-btn.loading{animation:locate-spin 1s linear infinite;}
 @keyframes locate-spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
 .pikmin-user-dot{width:16px;height:16px;border-radius:50%;background:#4285F4;border:3px solid #fff;box-shadow:0 0 0 2px rgba(66,133,244,.4),0 1px 4px rgba(0,0,0,.4);}
+.pikmin-cluster-wrap{background:transparent!important;border:none!important;}
+.pikmin-cluster-ico{width:100%;height:100%;border-radius:50%;background:linear-gradient(135deg,#5BAD5A,#3d8a3c);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35);}
 
 .item{padding:9px 11px;border-bottom:1px solid #f0f7ed;cursor:pointer;transition:background .12s;position:relative;}
 .item:hover{background:#e8f5e6;}
@@ -181,6 +194,38 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
   display:flex;align-items:center;justify-content:center;transition:background .2s,transform .15s;
 }
 #newspot-btn:hover{background:#c96e0f;}
+
+/* ── 搜尋 ── */
+#search-btn{
+  position:fixed;right:14px;bottom:204px;
+  z-index:600;background:#fff;color:#3d8a3c;border:none;
+  width:42px;height:42px;border-radius:50%;
+  font-size:1.1rem;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3);
+  display:flex;align-items:center;justify-content:center;transition:background .2s;
+}
+#search-btn:hover{background:#f0f7ed;}
+#search-btn.active{color:#fff;background:#3d8a3c;}
+#search-panel{
+  display:none;position:fixed;top:0;left:0;right:0;z-index:2050;
+  background:#fff;box-shadow:0 4px 16px rgba(0,0,0,.25);
+  padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top));
+}
+#search-panel.show{display:block;}
+#search-box-row{display:flex;align-items:center;gap:8px;}
+#search-input{
+  flex:1;border:1.5px solid #cde0ca;border-radius:10px;padding:9px 12px;
+  font-family:inherit;font-size:.82rem;outline:none;color:#1a2e18;background:#f7fbf6;
+}
+#search-input:focus{border-color:#5BAD5A;}
+#search-close{background:none;border:none;font-size:1rem;color:#6b7c68;cursor:pointer;padding:4px 6px;}
+#search-results{max-height:50vh;overflow-y:auto;margin-top:8px;}
+.sr-item{padding:9px 8px;border-bottom:1px solid #f0f7ed;cursor:pointer;display:flex;align-items:center;gap:8px;}
+.sr-item:hover{background:#e8f5e6;}
+.sr-icon{font-size:15px;flex-shrink:0;}
+.sr-main{flex:1;min-width:0;}
+.sr-name{font-size:.8rem;font-weight:600;color:#1a2e18;}
+.sr-sub{font-size:.66rem;color:#6b7c68;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sr-empty{padding:18px;text-align:center;color:#6b7c68;font-size:.78rem;}
 #ns-pick-banner{
   display:none;position:fixed;top:0;left:0;right:0;z-index:2100;
   background:#3d8a3c;color:#fff;padding:10px 14px;font-size:.78rem;font-weight:700;
@@ -207,10 +252,6 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
 #ns-manual-input{width:100%;box-sizing:border-box;border:1.5px solid #cde0ca;border-radius:9px;padding:9px 10px;font-size:.78rem;font-family:inherit;color:#333;margin-bottom:6px;}
 #ns-manual-input:focus{outline:none;border-color:#3d8a3c;}
 .ns-manual-hint{font-size:.65rem;color:#999;margin-bottom:8px;line-height:1.5;}
-.ns-manual-row{display:flex;gap:8px;}
-#ns-manual-apply{flex:1;padding:8px 6px;border-radius:9px;border:none;background:#3d8a3c;color:#fff;font-family:inherit;font-size:.72rem;font-weight:700;cursor:pointer;}
-#ns-manual-apply:hover{background:#357a34;}
-#ns-manual-apply:disabled{background:#b9d4b8;cursor:not-allowed;}
 .ns-manual-status{font-size:.68rem;margin-top:6px;color:#3d8a3c;}
 .ns-manual-status.err{color:#c0392b;}
 
@@ -243,6 +284,25 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
 
 /* 總進度 */
 #dex-prog{padding:10px 14px;background:#fff;border-bottom:1px solid #e0dbd4;flex-shrink:0;}
+
+/* 圖鑑資料提示 */
+#dex-notice{
+  display:flex;align-items:flex-start;gap:8px;
+  padding:9px 13px;
+  background:#fff8e1;
+  border-bottom:1px solid #f3d97a;
+  font-size:.68rem;color:#7a5f00;
+  line-height:1.55;
+  flex-shrink:0;
+}
+#dex-notice.hidden{display:none;}
+#dex-notice-icon{font-size:1rem;flex-shrink:0;margin-top:1px;}
+#dex-notice-close{
+  margin-left:auto;flex-shrink:0;
+  background:none;border:none;
+  font-size:.85rem;color:#a08020;cursor:pointer;
+  padding:0 0 0 6px;line-height:1;align-self:flex-start;
+}
 .prog-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
 .prog-label{font-size:.76rem;color:#3d8a3c;font-weight:700;}
 .prog-pct{font-size:.76rem;color:#6b7c68;}
@@ -290,6 +350,11 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
 .pb-rock{background:linear-gradient(135deg,#868e96,#495057);}
 .pb-winged{background:linear-gradient(135deg,#ff8fab,#e84393);}
 .pb-ice{background:linear-gradient(135deg,#a8dadc,#48cae4);}
+.pb-rare{background:linear-gradient(135deg,#ffd700,#ff6b9d,#7b2ff7);}
+.dex-variant-hdr{font-size:.74rem;font-weight:700;color:#3d5a3a;margin:8px 0 6px;display:flex;align-items:center;gap:5px;}
+.dex-variant-score{font-size:.68rem;font-weight:700;color:#3d8a3c;margin-left:auto;}
+.dex-variant-block{margin-bottom:6px;}
+.dex-variant-block+.dex-variant-block{border-top:1px dashed #e2e8df;padding-top:8px;}
 
 /* modal 底部 */
 #dex-foot{padding:10px 14px;border-top:1px solid #e0dbd4;display:flex;gap:8px;flex-shrink:0;background:#fff;}
@@ -321,6 +386,7 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
     <div id="disclaimer-emoji">⚠️</div>
     <h2>非官方玩家工具</h2>
     <p>本站為玩家自製的純點查詢地圖，所有資料皆來自社群回報整理，<strong>與 Niantic、Nintendo 或 Pikmin Bloom 官方無關</strong>，內容正確性不掛保證，僅供參考。</p>
+    <p style="font-size:.74rem;color:#6b7c68;background:#f7fbf6;border-radius:8px;padding:8px 10px;margin-bottom:18px;line-height:1.6;">📱 圖鑑收集進度儲存於<b>本裝置瀏覽器</b>，無帳號功能，<b>不會跨裝置同步</b>，清除瀏覽器資料時可能遺失。</p>
     <button id="disclaimer-btn" onclick="closeDisclaimer()">我知道了，繼續使用</button>
   </div>
 </div>
@@ -369,6 +435,16 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
 <button id="drawer-toggle" onclick="toggleDrawer()">🔍 純點種類篩選 <span class="toggle-count" id="toggle-count">424</span></button>
 <button id="locate-btn" onclick="locateMe()" title="定位到我目前的位置">📍</button>
 <button id="newspot-btn" onclick="openNewSpotModal()" title="回報新純點">➕</button>
+<button id="search-btn" onclick="toggleSearchPanel()" title="搜尋純點資料">🔎</button>
+
+<!-- 搜尋面板 -->
+<div id="search-panel">
+  <div id="search-box-row">
+    <input id="search-input" type="text" placeholder="搜尋純點名稱、類別、備註…" autocomplete="off" oninput="onSearchInput()" />
+    <button id="search-close" onclick="toggleSearchPanel(false)">✕</button>
+  </div>
+  <div id="search-results"></div>
+</div>
 
 <!-- 選位橫幅：點選地圖位置時顯示 -->
 <div id="ns-pick-banner">
@@ -392,9 +468,6 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
         <div id="ns-manual-box" class="show">
           <input type="text" id="ns-manual-input" placeholder="輸入座標，例如：25.0330, 121.5654" inputmode="decimal">
           <div class="ns-manual-hint">請輸入座標格式：緯度, 經度（例如 25.0330, 121.5654）</div>
-          <div class="ns-manual-row">
-            <button id="ns-manual-apply" onclick="nsApplyManualInput()">確認</button>
-          </div>
           <div class="ns-manual-status" id="ns-manual-status"></div>
         </div>
         <div class="ns-loc-box empty" id="ns-loc-box">尚未選擇位置</div>
@@ -441,6 +514,11 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
       </div>
       <div class="prog-wrap"><div class="prog-bar" id="prog-bar" style="width:0%"></div></div>
     </div>
+    <div id="dex-notice">
+      <span id="dex-notice-icon">⚠️</span>
+      <span>圖鑑收集進度僅儲存於<b>本裝置瀏覽器</b>，無帳號功能，<b>無法跨裝置同步</b>，換手機或清除瀏覽器資料後會重置。若要備份請截圖保存。</span>
+      <button id="dex-notice-close" onclick="closeDexNotice()" title="關閉">✕</button>
+    </div>
     <div id="dex-body"></div>
     <div id="dex-foot">
       <button class="dex-act" id="btn-clear-map" onclick="clearMapFilter()">↩ 清除地圖篩選</button>
@@ -477,53 +555,125 @@ var COLORS = [
   {key:'rock',   label:'岩', cls:'pb-rock'},
   {key:'winged', label:'翅', cls:'pb-winged'},
   {key:'ice',    label:'冰', cls:'pb-ice'},
+  {key:'rare',   label:'稀有', cls:'pb-rare'},
+  {key:'yellow1', label:'黃①', cls:'pb-yellow'},
+  {key:'yellow2', label:'黃②', cls:'pb-yellow'},
+  {key:'yellow3', label:'黃③', cls:'pb-yellow'},
+  {key:'yellow4', label:'黃④', cls:'pb-yellow'},
+  {key:'yellow5', label:'黃⑤', cls:'pb-yellow'},
+  {key:'yellow6', label:'黃⑥', cls:'pb-yellow'},
+  {key:'fairy1',  label:'黃①', cls:'pb-yellow'},
+  {key:'fairy2',  label:'黃②', cls:'pb-yellow'},
 ];
+// 預設顏色組合（不含稀有）/ 去冰版本 / 加稀有版本
+var DEFAULT_COLOR_KEYS = ['red','yellow','blue','white','purple','rock','winged','ice'];
+var NO_ICE_KEYS = ['red','yellow','blue','white','purple','rock','winged'];
+var NO_ICE_RARE_KEYS = NO_ICE_KEYS.concat(['rare']);
+var WITH_RARE_KEYS = DEFAULT_COLOR_KEYS.concat(['rare']);
+var RYB_KEYS = ['red','yellow','blue'];
 
 // ══════════════════════════════════════
 // 圖鑑類型定義
 // ══════════════════════════════════════
 var DEX = [
-  {key:'museum',      label:'美術館',      icon:'🖼️', sub:'畫框飾品',    color:'#F5D842'},
-  {key:'theme',       label:'主題樂園',    icon:'🎡', sub:'遊樂設施飾品', color:'#4A90D9'},
+  {key:'museum',      label:'美術館',      icon:'🖼️', sub:'畫框飾品',    color:'#F5D842', colors:NO_ICE_KEYS},
+  {key:'theme',       label:'主題樂園',    icon:'🎡', sub:'遊樂設施飾品', color:'#4A90D9', colors:RYB_KEYS},
   {key:'cinema_pure', label:'電影院',      icon:'🎬', sub:'爆米花飾品',   color:'#F5D842'},
-  {key:'cinema_event',label:'電影院(活動)',icon:'🎬', sub:'爆米花盆飾品', color:'#9B59B6'},
-  {key:'taco',        label:'塔可餅',      icon:'🌮', sub:'塔可餅飾品',   color:'#E84040'},
+  {key:'taco',        label:'塔可餅',      icon:'🌮', sub:'塔可餅飾品',   color:'#E84040', colors:NO_ICE_KEYS},
   {key:'kimchi',      label:'韓國泡菜',    icon:'🥘', sub:'泡菜罐飾品',   color:'#E91E8C'},
-  {key:'baguette',    label:'法國麵包',    icon:'🥖', sub:'長棍麵包飾品', color:'#8D6E63'},
-  {key:'coffee',      label:'咖啡杯',      icon:'☕', sub:'咖啡杯飾品',   color:'#FF7F2A'},
-  {key:'burger',      label:'漢堡',        icon:'🍔', sub:'漢堡飾品',     color:'#FF8F00'},
-  {key:'sushi',       label:'壽司',        icon:'🍣', sub:'壽司飾品',     color:'#00897B'},
-  {key:'shell',       label:'貝殼/海灘',   icon:'🐚', sub:'貝殼飾品',     color:'#0097A7'},
-  {key:'hill',        label:'山丘',        icon:'⛰️', sub:'山丘飾品',     color:'#7CB342'},
-  {key:'water',       label:'水邊',        icon:'💧', sub:'水滴飾品',     color:'#4A90D9'},
-  {key:'bridge',      label:'橋樑',        icon:'🌉', sub:'橋樑飾品',     color:'#9B59B6'},
+  {key:'baguette',    label:'法國麵包',    icon:'🥖', sub:'長棍麵包飾品', color:'#8D6E63',
+    variants:[
+      {key:'baguette_normal', label:'一般', icon:'🥖', colors:NO_ICE_KEYS},
+      {key:'baguette_rare',   label:'稀有', icon:'✨', colors:NO_ICE_KEYS}
+    ]},
+  {key:'coffee',      label:'咖啡杯',      icon:'☕', sub:'咖啡杯飾品',   color:'#FF7F2A',
+    variants:[
+      {key:'coffee_normal', label:'一般', icon:'☕', colors:DEFAULT_COLOR_KEYS},
+      {key:'coffee_rare',   label:'稀有', icon:'✨', colors:NO_ICE_KEYS}
+    ]},
+  {key:'burger',      label:'漢堡',        icon:'🍔', sub:'漢堡飾品',     color:'#FF8F00', colors:NO_ICE_KEYS},
+  {key:'sushi',       label:'壽司',        icon:'🍣', sub:'壽司飾品',     color:'#00897B', colors:NO_ICE_KEYS},
+  {key:'shell',       label:'貝殼/海灘',   icon:'🐚', sub:'貝殼飾品',     color:'#0097A7', colors:NO_ICE_KEYS},
+  {key:'hill',        label:'山丘',        icon:'⛰️', sub:'山丘飾品',     color:'#7CB342', colors:NO_ICE_KEYS},
+  {key:'water',       label:'水邊',        icon:'💧', sub:'水滴飾品',     color:'#4A90D9',
+    variants:[
+      {key:'water_normal', label:'一般', icon:'💧', colors:NO_ICE_KEYS},
+      {key:'water_rare',   label:'稀有', icon:'✨', colors:NO_ICE_KEYS}
+    ]},
+  {key:'bridge',      label:'橋樑',        icon:'🌉', sub:'橋樑飾品',     color:'#9B59B6', colors:NO_ICE_KEYS},
   {key:'plane',       label:'飛機',        icon:'✈️',  sub:'飛機飾品',     color:'#1565C0'},
-  {key:'bus',         label:'公車',        icon:'🚌', sub:'公車飾品',     color:'#F57F17'},
-  {key:'tram',        label:'電車',        icon:'🚃', sub:'電車飾品',     color:'#00695C'},
-  {key:'hotel',       label:'飯店',        icon:'🛏️', sub:'飯店備品飾品', color:'#6A1B9A'},
-  {key:'forest',      label:'森林',        icon:'🌳', sub:'樹葉飾品',     color:'#2E7D32'},
-  {key:'clover',      label:'幸運草',      icon:'🍀', sub:'幸運草飾品',   color:'#388E3C'},
-  {key:'italian',     label:'義式餐廳',    icon:'🍕', sub:'披薩飾品',     color:'#C62828'},
-  {key:'ramen',       label:'拉麵',        icon:'🍜', sub:'拉麵飾品',     color:'#E65100'},
-  {key:'restaurant',  label:'餐廳/廚師',   icon:'🍽️', sub:'廚師帽飾品',   color:'#BF360C'},
-  {key:'tool',        label:'工具',        icon:'🔧', sub:'工具飾品',     color:'#FFEA00'},
-  {key:'cosmetics',   label:'化妝品',      icon:'💄', sub:'化妝品飾品',   color:'#DB4436'},
-  {key:'toothbrush',  label:'牙刷',        icon:'🪥', sub:'牙刷飾品',     color:'#0288D1'},
-  {key:'salon',       label:'美容院/剪刀', icon:'✂️', sub:'剪刀飾品',     color:'#0288D1'},
-  {key:'clothing',    label:'服裝店',      icon:'👕', sub:'服裝店飾品',   color:'#0288D1'},
-  {key:'convenience', label:'便利商店',    icon:'🏪', sub:'便利商店飾品', color:'#0288D1'},
-  {key:'dessert',     label:'甜點',        icon:'🍰', sub:'甜點飾品',     color:'#DB4436'},
-  {key:'laundry',     label:'洗衣店',      icon:'🧺', sub:'洗衣店飾品',   color:'#FFEA00'},
-  {key:'curry',       label:'咖哩',        icon:'🍛', sub:'咖哩飾品',     color:'#DB4436'},
+  {key:'bus',         label:'公車',        icon:'🚌', sub:'公車飾品',     color:'#F57F17', colors:NO_ICE_KEYS},
+  {key:'tram',        label:'電車',        icon:'🚃', sub:'電車飾品',     color:'#00695C',
+    variants:[
+      {key:'tram_paper',  label:'紙模型', icon:'📃'},
+      {key:'tram_ticket', label:'車票',   icon:'🎫'}
+    ]},
+  {key:'hotel',       label:'飯店',        icon:'🛏️', sub:'飯店備品飾品', color:'#6A1B9A', colors:NO_ICE_KEYS},
+  {key:'forest',      label:'森林',        icon:'🌳', sub:'樹葉飾品',     color:'#2E7D32',
+    variants:[
+      {key:'forest_beetle', label:'鍬形蟲', icon:'🪲'},
+      {key:'forest_acorn',  label:'橡果',   icon:'🌰'}
+    ]},
+  {key:'clover',      label:'幸運草',      icon:'🍀', sub:'幸運草飾品',   color:'#388E3C',
+    variants:[
+      {key:'clover_normal',     label:'一般',   icon:'🍀', colors:DEFAULT_COLOR_KEYS},
+      {key:'clover_rare',       label:'稀有',   icon:'✨', colors:DEFAULT_COLOR_KEYS},
+      {key:'four_leaf_normal',  label:'四葉一般', icon:'🍀', colors:DEFAULT_COLOR_KEYS},
+      {key:'four_leaf_rare',    label:'四葉稀有', icon:'✨', colors:DEFAULT_COLOR_KEYS}
+    ]},
+  {key:'italian',     label:'義式餐廳',    icon:'🍕', sub:'披薩飾品',     color:'#C62828',
+    variants:[
+      {key:'italian_pizza', label:'披薩',   icon:'🍕', colors:NO_ICE_KEYS},
+      {key:'italian_pasta', label:'義大利麵', icon:'🍝', colors:NO_ICE_KEYS}
+    ]},
+  {key:'ramen',       label:'拉麵',        icon:'🍜', sub:'拉麵飾品',     color:'#E65100', colors:NO_ICE_KEYS},
+  {key:'restaurant',  label:'餐廳/廚師',   icon:'🍽️', sub:'廚師帽飾品',   color:'#BF360C',
+    variants:[
+      {key:'restaurant_normal', label:'一般', icon:'🍽️', colors:DEFAULT_COLOR_KEYS},
+      {key:'restaurant_rare',   label:'稀有', icon:'✨', colors:DEFAULT_COLOR_KEYS}
+    ]},
+  {key:'tool',        label:'工具',        icon:'🔧', sub:'工具飾品',     color:'#FFEA00', colors:NO_ICE_KEYS},
+  {key:'cosmetics',   label:'化妝品',      icon:'💄', sub:'化妝品飾品',   color:'#DB4436', colors:NO_ICE_KEYS},
+  {key:'toothbrush',  label:'牙刷',        icon:'🪥', sub:'牙刷飾品',     color:'#0288D1',
+    variants:[
+      {key:'toothbrush_normal', label:'一般', icon:'🪥', colors:DEFAULT_COLOR_KEYS},
+      {key:'toothbrush_rare',   label:'稀有', icon:'✨', colors:DEFAULT_COLOR_KEYS}
+    ]},
+  {key:'salon',       label:'美容院/剪刀', icon:'✂️', sub:'剪刀飾品',     color:'#0288D1',
+    variants:[
+      {key:'salon_normal', label:'一般', icon:'✂️', colors:NO_ICE_KEYS},
+      {key:'salon_rare',   label:'稀有', icon:'✨', colors:NO_ICE_KEYS}
+    ]},
+  {key:'clothing',    label:'服裝店',      icon:'👕', sub:'服裝店飾品',   color:'#0288D1', colors:NO_ICE_KEYS},
+  {key:'convenience', label:'便利商店',    icon:'🏪', sub:'便利商店飾品', color:'#0288D1',
+    variants:[
+      {key:'convenience_cap',   label:'瓶蓋', icon:'🥤', colors:NO_ICE_KEYS},
+      {key:'convenience_snack', label:'零食', icon:'🍪', colors:NO_ICE_KEYS}
+    ]},
+  {key:'dessert',     label:'甜點',        icon:'🍰', sub:'甜點飾品',     color:'#DB4436',
+    variants:[
+      {key:'dessert_macaron', label:'馬卡龍', icon:'🍬', colors:NO_ICE_KEYS},
+      {key:'dessert_donut',   label:'甜甜圈', icon:'🍩', colors:NO_ICE_KEYS}
+    ]},
+  {key:'laundry',     label:'洗衣店',      icon:'🧺', sub:'洗衣店飾品',   color:'#FFEA00', colors:NO_ICE_KEYS},
+  {key:'curry',       label:'咖哩',        icon:'🍛', sub:'咖哩飾品',     color:'#DB4436', colors:NO_ICE_KEYS},
   {key:'stationery',  label:'文具',        icon:'📐', sub:'文具飾品',     color:'#DB4436'},
-  {key:'supermarket', label:'超市', icon:'🛒', sub:'超市飾品', color:'#43A047'},
-  {key:'post_office', label:'郵局', icon:'📮', sub:'郵筒飾品', color:'#E53935'},
-  {key:'minibook', label:'迷你書', icon:'📖', sub:'迷你書飾品', color:'#6D4C41'},
-  {key:'battery', label:'電池/仙女燈', icon:'🔋', sub:'仙女燈飾品', color:'#FBC02D'},
-  {key:'gym', label:'體育館', icon:'🏟️', sub:'體育館飾品', color:'#1976D2'},
-  {key:'university', label:'大學/學院', icon:'🎓', sub:'學院飾品', color:'#5E35B1'},
+  {key:'supermarket', label:'超市', icon:'🛒', sub:'超市飾品', color:'#43A047',
+    variants:[
+      {key:'supermarket_mushroom', label:'蘑菇', icon:'🍄', colors:NO_ICE_KEYS},
+      {key:'supermarket_banana',   label:'香蕉', icon:'🍌', colors:NO_ICE_KEYS},
+      {key:'supermarket_banana_rare', label:'香蕉稀有', icon:'✨', colors:NO_ICE_KEYS}
+    ]},
+  {key:'post_office', label:'郵局', icon:'📮', sub:'郵筒飾品', color:'#E53935', colors:NO_ICE_KEYS},
+  {key:'minibook', label:'迷你書', icon:'📖', sub:'迷你書飾品', color:'#6D4C41', colors:NO_ICE_KEYS},
+  {key:'battery', label:'電池/仙女燈', icon:'🔋', sub:'電池・仙女燈飾品', color:'#FBC02D',
+    variants:[
+      {key:'battery_cell',   label:'電池',   icon:'🔋', colors:['yellow1','yellow2','yellow3','yellow4','yellow5','yellow6']},
+      {key:'battery_fairy',  label:'仙女燈', icon:'🧚', colors:['fairy1','fairy2']}
+    ]},
+  {key:'gym', label:'體育館', icon:'🏟️', sub:'體育館飾品', color:'#1976D2', colors:NO_ICE_KEYS},
+  {key:'university', label:'大學/學院', icon:'🎓', sub:'學院飾品', color:'#5E35B1', colors:RYB_KEYS},
   {key:'zoo', label:'動物園', icon:'🦁', sub:'動物園飾品', color:'#FB8C00'},
-  {key:'korean', label:'韓國餐廳', icon:'🍲', sub:'韓式料理飾品', color:'#D81B60'},
 ];
 
 // ══════════════════════════════════════
@@ -546,25 +696,53 @@ function toggleColor(typeKey, colorKey){
   else owned[typeKey][colorKey]=true;
   saveOwned();
 }
+function getDexEntry(key){
+  return DEX.find(function(d){ return d.key===key; });
+}
+function colorKeysFor(entryOrVariant){
+  return entryOrVariant.colors || DEFAULT_COLOR_KEYS;
+}
+function rawOwnedCount(key){
+  if(!owned[key]) return 0;
+  return Object.keys(owned[key]).length;
+}
+// 取得整個圖鑑項目（含子分類 variants）的總顏色數
+function entryTotalColors(d){
+  if(d.variants) return d.variants.reduce(function(s,v){ return s+colorKeysFor(v).length; },0);
+  return colorKeysFor(d).length;
+}
+// 取得整個圖鑑項目（含子分類 variants）已收集數
+function entryOwnedCount(d){
+  if(d.variants) return d.variants.reduce(function(s,v){ return s+rawOwnedCount(v.key); },0);
+  return rawOwnedCount(d.key);
+}
 function typeOwnedCount(typeKey){
-  if(!owned[typeKey]) return 0;
-  return Object.keys(owned[typeKey]).length;
+  typeKey=realType(typeKey);
+  var d=getDexEntry(typeKey);
+  if(d) return entryOwnedCount(d);
+  return rawOwnedCount(typeKey);
+}
+function typeTotalColors(typeKey){
+  typeKey=realType(typeKey);
+  var d=getDexEntry(typeKey);
+  if(d) return entryTotalColors(d);
+  return COLORS.length;
 }
 function typeFullyOwned(typeKey){
-  return typeOwnedCount(typeKey) >= COLORS.length;
+  return typeOwnedCount(typeKey) >= typeTotalColors(typeKey);
 }
 function typeMissingCount(typeKey){
-  return COLORS.length - typeOwnedCount(typeKey);
+  return typeTotalColors(typeKey) - typeOwnedCount(typeKey);
 }
 // 總計：所有類型中還缺的顏色數
 function totalMissing(){
   var n=0;
-  DEX.forEach(function(d){ n+=typeMissingCount(d.key); });
+  DEX.forEach(function(d){ n+=(entryTotalColors(d)-entryOwnedCount(d)); });
   return n;
 }
 function totalOwned(){
   var n=0;
-  DEX.forEach(function(d){ n+=typeOwnedCount(d.key); });
+  DEX.forEach(function(d){ n+=entryOwnedCount(d); });
   return n;
 }
 
@@ -649,6 +827,17 @@ function applyTypeSelection(){
   if(drawerOpen){ toggleDrawer(); }
 }
 
+function popupFltType(typeKey){
+  map.closePopup();
+  // 先清空再設定
+  clearTypeSelection();
+  selectedTypes[typeKey]=true;
+  // 更新地圖
+  var typeBtnEl=document.querySelector('.fb-type[data-key="'+typeKey+'"]');
+  if(typeBtnEl) typeBtnEl.classList.add('sel');
+  applyTypeSelection();
+}
+
 
 // ══════════════════════════════════════
 // 資料
@@ -664,19 +853,6 @@ var spots=[
   {id:7,name:'塔可餅 7選1',lat:22.6226354,lng:120.3033257,type:'taco',isPure:false,note:'06/20 已確認',desc:['咖啡杯','義式餐廳','法國麵包','餐廳','牙刷','化妝品','塔可餅'],icon:'🌮',color:C.red},
   {id:8,name:'塔可餅 6選1',lat:22.6647987,lng:120.3089879,type:'taco',isPure:false,note:'06/20 已更新',desc:['韓國泡菜','剪刀','拉麵','公車','餐廳','塔可餅'],icon:'🌮',color:C.red},
   {id:9,name:'電影院',lat:22.6456409,lng:120.3025002,type:'cinema_pure',isPure:true,note:'03/26 已確認是純點',icon:'🎬',color:C.pure},
-  {id:10,name:'電影院（活動）',lat:22.5948098,lng:120.3071272,type:'cinema_event',isPure:false,note:'4/1～6/23 皮克敏瑪利歐活動',detail:'使用探測器可高機率獲得電影院（爆米花）盆',icon:'🎬',color:C.blue},
-  {id:11,name:'電影院（活動）',lat:22.6215469,lng:120.2982309,type:'cinema_event',isPure:false,note:'4/1～5/31 皮克敏瑪利歐活動',detail:'使用探測器可高機率獲得電影院（爆米花）盆',icon:'🎬',color:C.blue},
-  {id:12,name:'電影院（活動）',lat:22.6207525,lng:120.2816865,type:'cinema_event',isPure:false,note:'4/1～6/23 皮克敏瑪利歐活動',detail:'使用探測器可高機率獲得電影院（爆米花）盆',icon:'🎬',color:C.blue},
-  {id:13,name:'電影院（活動）',lat:22.6321291,lng:120.3253294,type:'cinema_event',isPure:false,note:'4/1～6/23 皮克敏瑪利歐活動',detail:'使用探測器可高機率獲得電影院（爆米花）盆',icon:'🎬',color:C.blue},
-  {id:14,name:'電影院（活動）',lat:22.6408988,lng:120.3230281,type:'cinema_event',isPure:false,note:'4/1～6/23 皮克敏瑪利歐活動',detail:'使用探測器可高機率獲得電影院（爆米花）盆',icon:'🎬',color:C.blue},
-  {id:15,name:'電影院（活動・100%）',lat:22.6121743,lng:120.2993213,type:'cinema_event',isPure:false,is100:true,note:'4/1～6/23 皮克敏瑪利歐活動',detail:'使用探測器可100%獲得電影院（爆米花）盆',icon:'🎬',color:C.purple},
-  {id:16,name:'電影院（活動）',lat:22.6035336,lng:120.3026389,type:'cinema_event',isPure:false,note:'4/1～6/23 皮克敏瑪利歐活動',detail:'使用探測器可高機率獲得電影院（爆米花）盆',icon:'🎬',color:C.blue},
-  {id:17,name:'電影院（活動）',lat:22.780073,lng:120.3004148,type:'cinema_event',isPure:false,note:'4/1～6/23 皮克敏瑪利歐活動',detail:'使用探測器可高機率獲得電影院（爆米花）盆',icon:'🎬',color:C.blue},
-  {id:18,name:'電影院（活動）',lat:22.7300561,lng:120.4041982,type:'cinema_event',isPure:false,note:'4/1～6/23 皮克敏瑪利歐活動',detail:'使用探測器可高機率獲得電影院（爆米花）盆',icon:'🎬',color:C.blue},
-  {id:19,name:'電影院（活動）',lat:22.794989,lng:120.2913831,type:'cinema_event',isPure:false,note:'4/1～6/23 皮克敏瑪利歐活動',detail:'使用探測器可高機率獲得電影院（爆米花）盆',icon:'🎬',color:C.blue},
-  {id:20,name:'電影院（活動）',lat:22.6224841,lng:120.2889261,type:'cinema_event',isPure:false,note:'4/1～6/23 皮克敏瑪利歐活動',detail:'使用探測器可高機率獲得電影院（爆米花）盆',icon:'🎬',color:C.blue},
-  {id:21,name:'電影院（活動・100%）',lat:22.6128741,lng:120.3043662,type:'cinema_event',isPure:false,is100:true,note:'4/1～6/23 皮克敏瑪利歐活動',detail:'使用探測器可100%獲得電影院（爆米花）盆',icon:'🎬',color:C.purple},
-  {id:22,name:'電影院（活動）',lat:22.6844592,lng:120.2798254,type:'cinema_event',isPure:false,note:'4/1～6/23 皮克敏瑪利歐活動',detail:'使用探測器可高機率獲得電影院（爆米花）盆',icon:'🎬',color:C.blue},
   {id:23,name:'主題樂園（海灘+水邊）',lat:22.745308,lng:120.24273,type:'theme',isPure:false,note:'非純點・海灘+水邊+主題樂園',icon:'🏖️',color:C.blue},
   {id:24,name:'韓國泡菜（非純點）',lat:22.6037495,lng:120.3930222,type:'kimchi',isPure:false,note:'06/20 非純點・迷你書 韓國泡菜',icon:'🥘',color:C.blue},
   {id:25,name:'韓國泡菜',lat:22.6564217,lng:120.2919254,type:'kimchi',isPure:true,note:'05/15 已確認是純點',addr:'高雄市鼓山區中華一路920號附近（訊號易飄移）',icon:'🥘',color:C.pink},
@@ -730,7 +906,6 @@ var spots=[
   {id:73,name:'水邊',lat:22.6812574,lng:120.3238774,type:'water',isPure:null,note:'未標示確認狀態',icon:'💧',color:C.grey},
   {id:74,name:'水邊',lat:22.5933234,lng:120.3625797,type:'water',isPure:true,note:'05/24 已確認是純點',icon:'💧',color:C.blue},
   {id:75,name:'水邊',lat:22.6908232,lng:120.3489356,type:'water',isPure:true,note:'03/05 已確認是純點',icon:'💧',color:C.blue},
-  {id:76,name:'水邊',lat:22.6475816,lng:120.3745624,type:'water',isPure:true,note:'02/28 確認是純點',icon:'💧',color:C.blue},
   {id:77,name:'水邊',lat:22.6357849,lng:120.3740735,type:'water',isPure:true,note:'06/20 確認是純點',icon:'💧',color:C.blue},
   {id:78,name:'水邊',lat:22.6635412,lng:120.372773,type:'water',isPure:true,note:'03/05 已確認是純點',icon:'💧',color:C.blue},
   {id:79,name:'水邊',lat:22.5590735,lng:120.3712764,type:'water',isPure:true,note:'05/24 已確認是純點',icon:'💧',color:C.blue},
@@ -739,7 +914,7 @@ var spots=[
   {id:82,name:'水邊',lat:22.6443847,lng:120.317917,type:'water',isPure:true,note:'05/24 已確認是純點',icon:'💧',color:C.blue},
   {id:83,name:'水邊',lat:22.6162109,lng:120.2700218,type:'water',isPure:null,note:'未標示確認狀態',icon:'💧',color:C.grey},
   {id:84,name:'水邊',lat:22.615001,lng:120.363812,type:'water',isPure:true,note:'06/20 已確認是純點',icon:'💧',color:C.blue},
-  {id:85,name:'水邊',lat:22.625285,lng:120.3829915,type:'water',isPure:true,note:'06/20 已確認是純點',icon:'💧',color:C.blue},
+  {id:85,name:'幸運草',lat:22.625285,lng:120.3829915,type:'clover',isPure:true,note:'06/20 已確認是純點',icon:'🍀',color:'#43A047'},
   {id:86,name:'水邊',lat:22.8822127,lng:120.3305168,type:'water',isPure:true,note:'04/15 已確認是純點',icon:'💧',color:C.blue},
   {id:87,name:'水邊',lat:22.725424,lng:120.308198,type:'water',isPure:null,note:'未標示確認狀態',icon:'💧',color:C.grey},
   {id:88,name:'橋樑',lat:22.7561512,lng:120.313783,type:'bridge',isPure:true,note:'06/20 已確認是純點',icon:'🌉',color:C.purple},
@@ -889,11 +1064,9 @@ var spots=[
   {id:231,name:'幸運草',lat:22.623657,lng:120.37956,type:'clover',isPure:true,note:'04/12 已確認是純點',icon:'🍀',color:'#43A047'},
   {id:232,name:'幸運草',lat:22.885262,lng:120.330162,type:'clover',isPure:true,note:'04/15 已確認是純點',icon:'🍀',color:'#43A047'},
   {id:233,name:'幸運草',lat:22.883238,lng:120.32546,type:'clover',isPure:true,note:'04/15 已確認是純點',icon:'🍀',color:'#43A047'},
-  {id:234,name:'幸運草',lat:22.360519,lng:120.360519,type:'clover',isPure:true,note:'04/19 已確認是純點',icon:'🍀',color:'#43A047'},
   {id:235,name:'幸運草',lat:22.567227,lng:120.364456,type:'clover',isPure:true,note:'04/19 已確認是純點',icon:'🍀',color:'#43A047'},
   {id:236,name:'幸運草',lat:22.644946,lng:120.330752,type:'clover',isPure:true,note:'05/05 已確認是純點',icon:'🍀',color:'#43A047'},
   {id:237,name:'幸運草',lat:22.648571,lng:120.330752,type:'clover',isPure:true,note:'05/05 已確認是純點',icon:'🍀',color:'#43A047'},
-  {id:238,name:'幸運草',lat:22.427637,lng:120.427637,type:'clover',isPure:true,note:'05/01 已確認是純點',icon:'🍀',color:'#43A047'},
   {id:239,name:'幸運草',lat:22.665427,lng:120.427637,type:'clover',isPure:true,note:'05/01 已確認是純點',icon:'🍀',color:'#43A047'},
   {id:240,name:'幸運草',lat:22.648571,lng:120.330752,type:'clover',isPure:true,note:'05/05 已確認是純點',icon:'🍀',color:'#43A047'},
   {id:241,name:'幸運草',lat:22.565175,lng:120.360519,type:'clover',isPure:true,note:'04/19 已確認是純點',icon:'🍀',color:'#43A047'},
@@ -1047,7 +1220,6 @@ var spots=[
   {id:389,name:'迷你書',lat:22.627151,lng:120.357521,type:'minibook',isPure:true,note:'05/24 已確認是純點',icon:'📖',color:C.pure},
   {id:390,name:'迷你書',lat:22.679088,lng:120.306396,type:'minibook',isPure:true,note:'06/15 已確認是純點',icon:'📖',color:C.pure},
   {id:391,name:'迷你書',lat:22.6623865,lng:120.315289,type:'minibook',isPure:true,note:'04/09 已確認是純點',icon:'📖',color:C.pure},
-  {id:392,name:'電影院（活動）',lat:22.622688,lng:120.302006,type:'cinema_event',isPure:false,note:'4/1～5/31 皮克敏瑪利歐活動',detail:'使用探測器可高機率獲得電影院（爆米花）盆',icon:'🎬',color:C.blue},
   {id:393,name:'超市',lat:22.8792645,lng:120.3240469,type:'supermarket',isPure:true,note:'04/15 已確認是純點',icon:'🛒',color:C.pure},
   {id:394,name:'便利商店',lat:22.7364,lng:120.293402,type:'convenience',isPure:true,note:'04/17 已確認是純點',icon:'🏪',color:C.pure},
   {id:395,name:'超市',lat:22.6154315,lng:120.3624582,type:'supermarket',isPure:true,note:'05/03 已確認是純點',icon:'🛒',color:C.pure},
@@ -1207,6 +1379,10 @@ function toggleDrawer(){
   document.getElementById('drawer').classList.toggle('open',drawerOpen);
   var btn=document.getElementById('drawer-toggle');
   btn.classList.toggle('open',drawerOpen);
+  ['locate-btn','newspot-btn','search-btn'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.style.display = drawerOpen ? 'none' : '';
+  });
   updateToggleBtn();
   if(window._map) setTimeout(function(){window._map.invalidateSize(true);},320);
 }
@@ -1261,6 +1437,21 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
 }).addTo(map);
 
 var markerMap={};
+var clusterGroup=L.markerClusterGroup({
+  maxClusterRadius:50,
+  spiderfyOnMaxZoom:true,
+  showCoverageOnHover:false,
+  disableClusteringAtZoom:18,
+  iconCreateFunction:function(cluster){
+    var n=cluster.getChildCount();
+    var size = n<10 ? 34 : n<30 ? 40 : 46;
+    return L.divIcon({
+      html:'<div class="pikmin-cluster-ico">'+n+'</div>',
+      className:'pikmin-cluster-wrap',
+      iconSize:[size,size]
+    });
+  }
+}).addTo(map);
 
 // ── 定位我目前的位置 ──
 var userMarker=null, userAccCircle=null;
@@ -1341,8 +1532,12 @@ function openNewSpotModal(){
   var inp=document.getElementById('ns-manual-input');
   if(!inp.dataset.bound){
     inp.dataset.bound='1';
-    inp.addEventListener('keydown',function(e){
-      if(e.key==='Enter'){ e.preventDefault(); nsApplyManualInput(); }
+    var _nsDebounce=null;
+    inp.addEventListener('input',function(){
+      clearTimeout(_nsDebounce);
+      var val=inp.value.trim();
+      if(!val){ nsSetManualStatus('',false); return; }
+      _nsDebounce=setTimeout(function(){ nsApplyManualInput(); },400);
     });
   }
 }
@@ -1401,20 +1596,14 @@ function nsApplyCoords(lat,lng,sourceLabel,statusElId){
 async function nsApplyManualInput(){
   var input=document.getElementById('ns-manual-input');
   var text=input.value.trim();
-  if(!text){ nsSetManualStatus('請先輸入座標',true); return; }
-  var btn=document.getElementById('ns-manual-apply');
-  btn.disabled=true;
+  if(!text){ nsSetManualStatus('',false); return; }
   nsSetManualStatus('解析中…',false);
-  try{
-    var coords=nsParseCoordsFromText(text);
-    if(coords){
-      nsApplyCoords(coords.lat,coords.lng,'座標');
-      return;
-    }
-    nsSetManualStatus('⚠️ 格式錯誤，請輸入座標，例如：25.0330, 121.5654',true);
-  } finally {
-    btn.disabled=false;
+  var coords=nsParseCoordsFromText(text);
+  if(coords){
+    nsApplyCoords(coords.lat,coords.lng,'座標');
+    return;
   }
+  nsSetManualStatus('⚠️ 格式錯誤，請輸入座標，例如：25.0330, 121.5654',true);
 }
 
 function nsUseMyLocation(){
@@ -1675,30 +1864,103 @@ function mkPopupHtml(s){
   var pureBg=s.isPure===true?'#5BAD5A':s.isPure===false?'#888':'#90A4AE';
   var pureLabel=s.isPure===true?'✅ 純點':s.isPure===false?'🔀 非純點':'❓ 未確認';
   var tags=s.desc&&s.desc.length?'<div class="pu-tags">'+s.desc.map(function(d){return '<span class="pu-tag">'+d+'</span>';}).join('')+'</div>':'';
-  var detail=s.detail?'<div class="pu-detail">🍿 '+s.detail+'</div>':'';
+  var detail=s.detail?'<div class="pu-detail">📌 '+s.detail+'</div>':'';
   var addr=s.addr?'<div class="pu-addr">📍 '+s.addr+'</div>':'';
   var cnt=typeOwnedCount(realType(s.type));
-  var total=COLORS.length;
+  var total=typeTotalColors(realType(s.type));
   var statusHtml='<div class="pu-status" onclick="jumpToDex(\''+realType(s.type)+'\')" style="cursor:pointer;background:'+(cnt===total?'#d4edda':'#fff3cd')+';color:'+(cnt===total?'#3d8a3c':'#856404')+'">'+
     (cnt===total?'✅':'📖')+' 此類型：'+cnt+'/'+total+' 顏色已收集（點擊查看圖鑑）</div>';
   var navUrl='https://www.google.com/maps/dir/?api=1&destination='+s.lat+','+s.lng+'&travelmode=walking';
   var navBtn='<a href="'+navUrl+'" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:5px;margin-top:8px;padding:7px;background:#4285F4;color:#fff;border-radius:9px;text-decoration:none;font-size:.74rem;font-weight:700;">🧭 Google 導航</a>';
-  return '<div class="pu"><div class="pu-badge" style="background:'+pureBg+'">'+pureLabel+'</div>'+
+  // 類別篩選快捷按鈕
+  var dexEntry=DEX.find(function(d){return d.key===realType(s.type);});
+  var typeFltBtn='';
+  if(dexEntry){
+    typeFltBtn='<button onclick="popupFltType(\''+realType(s.type)+'\')" style="display:inline-flex;align-items:center;gap:3px;font-size:.64rem;font-weight:700;padding:2px 7px;border-radius:8px;border:1.5px solid #3d8a3c;background:#e6f4e4;color:#3d8a3c;cursor:pointer;font-family:inherit;margin-left:4px;">'+dexEntry.icon+' '+dexEntry.label+'</button>';
+  }
+  return '<div class="pu"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:3px;margin-bottom:4px;"><div class="pu-badge" style="background:'+pureBg+'">'+pureLabel+'</div>'+typeFltBtn+'</div>'+
     '<div class="pu-name">'+s.name+'</div>'+
     '<div class="pu-note">'+s.note+'</div>'+
     addr+detail+tags+statusHtml+navBtn+mkReportHtml(s)+'</div>';
 }
 
 spots.forEach(function(s){
-  var m=L.marker([s.lat,s.lng],{icon:mkIcon(s)}).addTo(map);
+  var m=L.marker([s.lat,s.lng],{icon:mkIcon(s)});
   m.bindPopup(mkPopupHtml(s),{maxWidth:290});
   markerMap[s.id]=m;
+  clusterGroup.addLayer(m);
 });
 
 function refreshMarkers(){
   spots.forEach(function(s){
     var m=markerMap[s.id];
     if(m){m.setIcon(mkIcon(s));m.setPopupContent(mkPopupHtml(s));}
+  });
+}
+
+// ══════════════════════════════════════
+// 搜尋
+// ══════════════════════════════════════
+function toggleSearchPanel(force){
+  var panel=document.getElementById('search-panel');
+  var btn=document.getElementById('search-btn');
+  var show = (typeof force==='boolean') ? force : !panel.classList.contains('show');
+  if(show){
+    panel.classList.add('show');
+    btn.classList.add('active');
+    setTimeout(function(){ document.getElementById('search-input').focus(); },50);
+  } else {
+    panel.classList.remove('show');
+    btn.classList.remove('active');
+  }
+}
+
+function onSearchInput(){
+  var q=document.getElementById('search-input').value.trim().toLowerCase();
+  var box=document.getElementById('search-results');
+  if(!q){ box.innerHTML='<div class="sr-empty" style="color:#9aae96;">搜尋範圍：此地圖內的純點名稱、備註、地址</div>'; return; }
+  var matches=spots.filter(function(s){
+    return (s.name&&s.name.toLowerCase().indexOf(q)!==-1)
+      || (s.note&&s.note.toLowerCase().indexOf(q)!==-1)
+      || (s.addr&&s.addr.toLowerCase().indexOf(q)!==-1)
+      || (s.detail&&s.detail.toLowerCase().indexOf(q)!==-1)
+      || (s.desc&&s.desc.some(function(d){return d.toLowerCase().indexOf(q)!==-1;}));
+  }).slice(0,40);
+  if(matches.length===0){
+    box.innerHTML='<div class="sr-empty">找不到符合「'+q+'」的地點</div>';
+    return;
+  }
+  box.innerHTML=matches.map(function(s){
+    var sub=[s.addr,s.note].filter(Boolean).join(' · ');
+    return '<div class="sr-item" data-id="'+s.id+'"><span class="sr-icon">'+s.icon+'</span>'+
+      '<div class="sr-main"><div class="sr-name">'+s.name+'</div><div class="sr-sub">'+sub+'</div></div></div>';
+  }).join('');
+  box.querySelectorAll('.sr-item').forEach(function(el){
+    el.addEventListener('click',function(){
+      var id=el.getAttribute('data-id');
+      goToSpot(id);
+    });
+  });
+}
+
+function goToSpot(id){
+  var s=spotsById[id]||spots.find(function(x){return x.id===id;});
+  if(!s) return;
+  // 確保此地點目前有顯示在地圖上（若被篩選掉，先還原為「全部」）
+  if(!current.some(function(c){return c.id===s.id;})){
+    document.querySelectorAll('#flt > .fb').forEach(function(b){b.classList.remove('on');});
+    document.querySelector('#flt > .fb').classList.add('on');
+    currentFilter='all'; mapFocusType=null;
+    clearTypeSelection();
+    current=spots.slice();
+    refreshMarkers();
+    render();
+  }
+  toggleSearchPanel(false);
+  selId=s.id;
+  map.setView([s.lat,s.lng],17);
+  clusterGroup.zoomToShowLayer(markerMap[s.id],function(){
+    markerMap[s.id].openPopup();
   });
 }
 
@@ -1755,8 +2017,8 @@ function render(){
   spots.forEach(function(s){
     var inCur=current.some(function(c){return c.id===s.id;});
     var m=markerMap[s.id];
-    if(inCur){if(!map.hasLayer(m))m.addTo(map);}
-    else{if(map.hasLayer(m))map.removeLayer(m);}
+    if(inCur){if(!clusterGroup.hasLayer(m))clusterGroup.addLayer(m);}
+    else{if(clusterGroup.hasLayer(m))clusterGroup.removeLayer(m);}
   });
 
   current.forEach(function(s){
@@ -1767,8 +2029,9 @@ function render(){
     var pureLabel=s.isPure===true?'✅純點':s.isPure===false?'🔀非純點':'❓未確認';
     var tags=s.desc&&s.desc.length?'<div class="item-tags">'+s.desc.map(function(d){return '<span class="tag">'+d+'</span>';}).join('')+'</div>':'';
     var addr=s.addr?'<div class="item-addr">📍 '+s.addr+'</div>':'';
-    var detail=s.detail?'<div class="item-detail">🍿 '+s.detail+'</div>':'';
+    var detail=s.detail?'<div class="item-detail">📌 '+s.detail+'</div>':'';
     var cnt=typeOwnedCount(s.type);
+    var totalC=typeTotalColors(s.type);
     div.innerHTML=
       '<div class="item-top">'+
         '<span class="item-icon">'+s.icon+'</span>'+
@@ -1776,14 +2039,16 @@ function render(){
         '<span class="item-badge" style="background:'+pureBg+'">'+pureLabel+'</span>'+
       '</div>'+
       '<div class="item-note">'+s.note+'</div>'+addr+detail+tags+
-      '<button class="own-btn'+(complete?' on':'')+'" title="開啟圖鑑">'+cnt+'/8</button>';
+      '<button class="own-btn'+(complete?' on':'')+'" title="開啟圖鑑">'+cnt+'/'+totalC+'</button>';
     div.addEventListener('click',function(e){
       if(e.target.classList.contains('own-btn'))return;
       selId=s.id;
       document.querySelectorAll('.item').forEach(function(el){el.classList.remove('sel');});
       div.classList.add('sel');
       map.setView([s.lat,s.lng],17);
-      markerMap[s.id].openPopup();
+      clusterGroup.zoomToShowLayer(markerMap[s.id],function(){
+        markerMap[s.id].openPopup();
+      });
     });
     div.querySelector('.own-btn').addEventListener('click',function(e){
       e.stopPropagation();
@@ -1828,6 +2093,7 @@ var scrollToKey=null;
 function openDex(focusKey){
   scrollToKey=focusKey||null;
   renderDex();
+  syncDexNotice();
   document.getElementById('dex-overlay').classList.add('open');
   if(scrollToKey){
     setTimeout(function(){
@@ -1841,13 +2107,23 @@ function jumpToDex(typeKey){
   openDex(typeKey);
 }
 function closeDex(){document.getElementById('dex-overlay').classList.remove('open');}
+function closeDexNotice(){
+  document.getElementById('dex-notice').classList.add('hidden');
+  try{ localStorage.setItem('pikmin_dex_notice_hidden','1'); }catch(e){}
+}
+function syncDexNotice(){
+  var hidden=false;
+  try{ hidden=localStorage.getItem('pikmin_dex_notice_hidden')==='1'; }catch(e){}
+  document.getElementById('dex-notice').classList.toggle('hidden', hidden);
+}
 function overlayClick(e){if(e.target===document.getElementById('dex-overlay'))closeDex();}
 
 function renderDex(){
   var body=document.getElementById('dex-body');
   body.innerHTML='';
 
-  var total=DEX.length*COLORS.length;
+  var total=0;
+  DEX.forEach(function(d){ total+=entryTotalColors(d); });
   var have=totalOwned();
   var pct=total>0?Math.round(have/total*100):0;
   document.getElementById('prog-label').textContent='已收集 '+have+' / '+total+' 個';
@@ -1856,12 +2132,12 @@ function renderDex(){
   updateMissBadge();
 
   DEX.forEach(function(d){
-    var cnt=typeOwnedCount(d.key);
-    var miss=typeMissingCount(d.key);
-    var full=typeFullyOwned(d.key);
+    var cnt=entryOwnedCount(d);
+    var totalColors=entryTotalColors(d);
+    var full=cnt>=totalColors;
 
     // 計算地點數
-    var spotCnt=spots.filter(function(s){return s.type===d.key;}).length;
+    var spotCnt=spots.filter(function(s){return realType(s.type)===d.key;}).length;
     var isFocus=mapFocusType===d.key;
 
     var card=document.createElement('div');
@@ -1871,7 +2147,7 @@ function renderDex(){
 
     // 進度列顏色
     var progColor=full?'#3d8a3c':(cnt>0?d.color:'#ccc');
-    var pctW=Math.round(cnt/COLORS.length*100);
+    var pctW=totalColors>0?Math.round(cnt/totalColors*100):0;
 
     // 右上角：分數 + 地圖按鈕
     var mapBtnCls='dex-map-btn'+(isFocus?' active':'');
@@ -1884,13 +2160,13 @@ function renderDex(){
           '<div class="dex-card-name">'+d.label+'</div>'+
           '<div class="dex-card-sub">'+d.sub+'・地點 '+spotCnt+' 個</div>'+
         '</div>'+
-        '<span class="dex-card-score">'+cnt+' / '+COLORS.length+'</span>'+
+        '<span class="dex-card-score">'+cnt+' / '+totalColors+'</span>'+
         '<button class="'+mapBtnCls+'" data-key="'+d.key+'">'+mapBtnTxt+'</button>'+
       '</div>'+
       '<div class="dex-type-prog">'+
         '<div class="dex-type-prog-wrap"><div class="dex-type-prog-bar" style="width:'+pctW+'%;background:'+progColor+'"></div></div>'+
       '</div>'+
-      '<div class="pikmin-grid" id="pgrid-'+d.key+'"></div>';
+      '<div class="dex-variant-wrap" id="vwrap-'+d.key+'"></div>';
 
     // 地圖按鈕事件
     card.querySelector('.dex-map-btn').addEventListener('click',function(e){
@@ -1898,26 +2174,46 @@ function renderDex(){
       focusMapType(d.key);
     });
 
-    // 皮克敏格子
-    var grid=card.querySelector('#pgrid-'+d.key);
-    COLORS.forEach(function(c){
-      var have=isColorOwned(d.key,c.key);
-      var cell=document.createElement('div');
-      cell.className='pikmin-cell'+(have?' have':'');
-      cell.innerHTML=
-        '<div class="pikmin-bubble '+c.cls+'">'+
-          '<span style="font-size:18px">🌱</span>'+
-        '</div>'+
-        '<span class="pikmin-label">'+c.label+'</span>';
-      cell.addEventListener('click',function(){
-        toggleColor(d.key,c.key);
-        renderDex();
-        refreshMarkers();
-        // 更新清單裡的 own-btn 顯示
-        render();
+    var vwrap=card.querySelector('#vwrap-'+d.key);
+
+    function buildGrid(storeKey,colorKeys){
+      var grid=document.createElement('div');
+      grid.className='pikmin-grid';
+      colorKeys.forEach(function(ck){
+        var c=COLORS.find(function(x){return x.key===ck;});
+        if(!c) return;
+        var have=isColorOwned(storeKey,c.key);
+        var cell=document.createElement('div');
+        cell.className='pikmin-cell'+(have?' have':'');
+        cell.innerHTML=
+          '<div class="pikmin-bubble '+c.cls+'">'+
+            '<span style="font-size:18px">🌱</span>'+
+          '</div>'+
+          '<span class="pikmin-label">'+c.label+'</span>';
+        cell.addEventListener('click',function(){
+          toggleColor(storeKey,c.key);
+          renderDex();
+          refreshMarkers();
+          render();
+        });
+        grid.appendChild(cell);
       });
-      grid.appendChild(cell);
-    });
+      return grid;
+    }
+
+    if(d.variants){
+      d.variants.forEach(function(v){
+        var vColors=colorKeysFor(v);
+        var vCnt=rawOwnedCount(v.key);
+        var block=document.createElement('div');
+        block.className='dex-variant-block';
+        block.innerHTML='<div class="dex-variant-hdr"><span>'+v.icon+'</span><span>'+v.label+'</span><span class="dex-variant-score">'+vCnt+' / '+vColors.length+'</span></div>';
+        block.appendChild(buildGrid(v.key,vColors));
+        vwrap.appendChild(block);
+      });
+    } else {
+      vwrap.appendChild(buildGrid(d.key,colorKeysFor(d)));
+    }
 
     body.appendChild(card);
   });
@@ -1950,4 +2246,4 @@ updateMissBadge();
 setTimeout(function(){layout();map.invalidateSize(true);},200);
 </script>
 </body>
-</html>
+  </html>
