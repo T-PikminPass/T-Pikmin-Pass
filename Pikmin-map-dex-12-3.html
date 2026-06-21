@@ -15,7 +15,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
-<link rel="styleshee6t" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -357,38 +357,10 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
 .dex-variant-block+.dex-variant-block{border-top:1px dashed #e2e8df;padding-top:8px;}
 
 /* modal 底部 */
-#dex-foot{padding:10px 14px;border-top:1px solid #e0dbd4;display:flex;gap:8px;flex-shrink:0;background:#fff;flex-wrap:wrap;}
+#dex-foot{padding:10px 14px;border-top:1px solid #e0dbd4;display:flex;gap:8px;flex-shrink:0;background:#fff;}
 .dex-act{flex:1;padding:9px;border-radius:11px;border:none;font-family:inherit;font-size:.78rem;font-weight:700;cursor:pointer;transition:all .15s;}
 #btn-clear-map{background:#f0f7ed;color:#1a2e18;border:1.5px solid #cde0ca;}
 #btn-clear-map:hover{background:#e6f4e4;}
-#btn-cloud-save{background:#3d8a3c;color:#fff;}
-#btn-cloud-save:hover{background:#2e6b2e;}
-#btn-cloud-load{background:#4A90D9;color:#fff;}
-#btn-cloud-load:hover{background:#357ab8;}
-#btn-cloud-save:disabled,#btn-cloud-load:disabled{background:#b0b0b0;cursor:not-allowed;}
-
-/* 雲端同步面板 */
-#cloud-panel{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:4000;align-items:center;justify-content:center;padding:20px;}
-#cloud-panel.open{display:flex;}
-#cloud-box{background:#fff;border-radius:16px;padding:22px 20px;max-width:340px;width:100%;box-shadow:0 8px 30px rgba(0,0,0,.3);}
-#cloud-box h3{font-size:.95rem;color:#1a2e18;margin:0 0 6px;display:flex;align-items:center;gap:6px;}
-.cloud-desc{font-size:.75rem;color:#6b7c68;line-height:1.6;margin-bottom:14px;}
-.cloud-id-row{display:flex;align-items:center;gap:6px;background:#f0f7ed;border-radius:10px;padding:9px 12px;margin-bottom:12px;}
-.cloud-id-label{font-size:.68rem;color:#6b7c68;flex-shrink:0;}
-#cloud-my-id{font-size:.78rem;font-family:monospace;color:#1a2e18;font-weight:700;word-break:break-all;flex:1;}
-#btn-copy-id{background:none;border:1.5px solid #cde0ca;border-radius:8px;padding:4px 8px;font-size:.72rem;cursor:pointer;color:#3d8a3c;font-weight:700;}
-.cloud-sep{display:flex;align-items:center;gap:8px;margin:14px 0;color:#aaa;font-size:.72rem;}
-.cloud-sep::before,.cloud-sep::after{content:'';flex:1;border-top:1px solid #e0dbd4;}
-.cloud-input-label{font-size:.75rem;color:#1a2e18;font-weight:700;margin-bottom:5px;}
-#cloud-load-input{width:100%;padding:9px 12px;border:1.5px solid #cde0ca;border-radius:10px;font-family:monospace;font-size:.78rem;box-sizing:border-box;outline:none;margin-bottom:10px;}
-#cloud-load-input:focus{border-color:#5BAD5A;}
-#cloud-status{font-size:.73rem;min-height:18px;color:#3d8a3c;margin-bottom:10px;}
-#cloud-status.err{color:#c0392b;}
-.cloud-btn-row{display:flex;gap:8px;}
-.cloud-btn{flex:1;padding:9px;border-radius:11px;border:none;font-family:inherit;font-size:.8rem;font-weight:700;cursor:pointer;}
-#cloud-btn-save{background:#3d8a3c;color:#fff;}
-#cloud-btn-load{background:#4A90D9;color:#fff;}
-#cloud-btn-close{background:#f0f0f0;color:#555;flex:0 0 auto;padding:9px 14px;}
 
 @media(max-width:600px){
   .pikmin-bubble{width:38px;height:38px;font-size:17px;}
@@ -544,38 +516,12 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
     </div>
     <div id="dex-notice">
       <span id="dex-notice-icon">⚠️</span>
-      <span>圖鑑收集進度僅儲存於<b>本裝置瀏覽器</b>，換手機或清除瀏覽器資料後會重置。可使用下方「雲端備份」跨裝置同步。</span>
+      <span>圖鑑收集進度僅儲存於<b>本裝置瀏覽器</b>，無帳號功能，<b>無法跨裝置同步</b>，換手機或清除瀏覽器資料後會重置。若要備份請截圖保存。</span>
       <button id="dex-notice-close" onclick="closeDexNotice()" title="關閉">✕</button>
     </div>
     <div id="dex-body"></div>
     <div id="dex-foot">
       <button class="dex-act" id="btn-clear-map" onclick="clearMapFilter()">↩ 清除地圖篩選</button>
-      <button class="dex-act" id="btn-cloud-save" onclick="openCloudPanel('save')">☁️ 雲端備份</button>
-      <button class="dex-act" id="btn-cloud-load" onclick="openCloudPanel('load')">📲 載入備份</button>
-    </div>
-  </div>
-</div>
-
-<!-- 雲端同步面板 -->
-<div id="cloud-panel" onclick="if(event.target===this)closeCloudPanel()">
-  <div id="cloud-box">
-    <h3>☁️ 圖鑑雲端同步</h3>
-    <p class="cloud-desc">你的專屬玩家 ID，記下來或截圖保存，換裝置時輸入同一組 ID 即可載回收集進度。</p>
-    <div class="cloud-id-row">
-      <span class="cloud-id-label">我的 ID：</span>
-      <span id="cloud-my-id">—</span>
-      <button id="btn-copy-id" onclick="copyPlayerId()">複製</button>
-    </div>
-    <div id="cloud-status"></div>
-    <div class="cloud-btn-row">
-      <button class="cloud-btn" id="cloud-btn-save" onclick="cloudSave()">☁️ 備份到雲端</button>
-    </div>
-    <div class="cloud-sep">或載入其他裝置的備份</div>
-    <div class="cloud-input-label">輸入玩家 ID：</div>
-    <input id="cloud-load-input" type="text" placeholder="貼上玩家 ID…" autocomplete="off">
-    <div class="cloud-btn-row">
-      <button class="cloud-btn" id="cloud-btn-load" onclick="cloudLoad()">📲 載入備份</button>
-      <button class="cloud-btn" id="cloud-btn-close" onclick="closeCloudPanel()">取消</button>
     </div>
   </div>
 </div>
@@ -740,99 +686,6 @@ function saveOwned(){
   try{ localStorage.setItem('pikmin_dex2', JSON.stringify(owned)); }catch(e){}
 }
 var owned = loadOwned();
-
-// ══════════════════════════════════════
-// 🆔 玩家 UUID（跨裝置同步用）
-// ══════════════════════════════════════
-function getOrCreatePlayerId(){
-  var id=localStorage.getItem('pikmin_player_id');
-  if(!id){
-    id='PB-'+Date.now().toString(36).toUpperCase()+'-'+Math.random().toString(36).slice(2,7).toUpperCase();
-    localStorage.setItem('pikmin_player_id',id);
-  }
-  return id;
-}
-var PLAYER_ID=getOrCreatePlayerId();
-
-// ══════════════════════════════════════
-// ☁️ 雲端備份 / 載入
-// ══════════════════════════════════════
-var _cloudMode='save';
-function openCloudPanel(mode){
-  _cloudMode=mode||'save';
-  document.getElementById('cloud-my-id').textContent=PLAYER_ID;
-  document.getElementById('cloud-status').textContent='';
-  document.getElementById('cloud-status').className='';
-  document.getElementById('cloud-load-input').value='';
-  document.getElementById('cloud-panel').classList.add('open');
-}
-function closeCloudPanel(){
-  document.getElementById('cloud-panel').classList.remove('open');
-}
-function copyPlayerId(){
-  var id=PLAYER_ID;
-  if(navigator.clipboard){
-    navigator.clipboard.writeText(id).then(function(){
-      document.getElementById('btn-copy-id').textContent='✅';
-      setTimeout(function(){document.getElementById('btn-copy-id').textContent='複製';},1500);
-    });
-  } else {
-    var ta=document.createElement('textarea');
-    ta.value=id; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-    document.getElementById('btn-copy-id').textContent='✅';
-    setTimeout(function(){document.getElementById('btn-copy-id').textContent='複製';},1500);
-  }
-}
-function cloudSetStatus(msg,isErr){
-  var el=document.getElementById('cloud-status');
-  el.textContent=msg;
-  el.className=isErr?'err':'';
-}
-function cloudSave(){
-  var btn=document.getElementById('cloud-btn-save');
-  btn.disabled=true;
-  cloudSetStatus('備份中…',false);
-  var params=new URLSearchParams({action:'saveProgress',playerId:PLAYER_ID,data:JSON.stringify(owned)});
-  fetch(GAS_URL+'?'+params.toString())
-    .then(function(r){return r.json();})
-    .then(function(res){
-      if(res.ok) cloudSetStatus('✅ 備份成功！玩家 ID 請截圖保存',false);
-      else cloudSetStatus('❌ 備份失敗：'+(res.error||'未知錯誤'),true);
-    })
-    .catch(function(){ cloudSetStatus('❌ 網路錯誤，請重試',true); })
-    .finally(function(){ btn.disabled=false; });
-}
-function cloudLoad(){
-  var input=document.getElementById('cloud-load-input').value.trim();
-  if(!input){ cloudSetStatus('請輸入玩家 ID',true); return; }
-  var btn=document.getElementById('cloud-btn-load');
-  btn.disabled=true;
-  cloudSetStatus('載入中…',false);
-  var params=new URLSearchParams({action:'loadProgress',playerId:input});
-  fetch(GAS_URL+'?'+params.toString())
-    .then(function(r){return r.json();})
-    .then(function(res){
-      if(res.ok && res.data){
-        try{
-          var loaded=JSON.parse(res.data);
-          owned=loaded;
-          saveOwned();
-          if(input!==PLAYER_ID){
-            localStorage.setItem('pikmin_player_id',input);
-            PLAYER_ID=input;
-            document.getElementById('cloud-my-id').textContent=PLAYER_ID;
-          }
-          renderDex();
-          renderProgBar();
-          cloudSetStatus('✅ 載入成功！收集進度已更新',false);
-        }catch(e){ cloudSetStatus('❌ 資料解析失敗',true); }
-      } else {
-        cloudSetStatus('❌ 找不到此 ID 的備份資料',true);
-      }
-    })
-    .catch(function(){ cloudSetStatus('❌ 網路錯誤，請重試',true); })
-    .finally(function(){ btn.disabled=false; });
-}
 
 function isColorOwned(typeKey, colorKey){
   return !!(owned[typeKey] && owned[typeKey][colorKey]);
