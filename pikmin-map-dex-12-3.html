@@ -15,7 +15,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+<link rel="styleshee6t" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -414,10 +414,7 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
     <div id="disclaimer-emoji">⚠️</div>
     <h2>非官方玩家工具</h2>
     <p>本站為玩家自製的純點查詢地圖，所有資料皆來自社群回報整理，<strong>與 Niantic、Nintendo 或 Pikmin Bloom 官方無關</strong>，內容正確性不掛保證，僅供參考。</p>
-    <p style="font-size:.74rem;color:#3d5a3a;background:#f0f7ed;border-radius:8px;padding:10px 12px;margin-bottom:18px;line-height:1.8;text-align:left;">
-      ☁️ <b>圖鑑進度可跨裝置同步</b><br>
-      進度儲存在本裝置瀏覽器。換手機前請先到圖鑑頁點「☁️ 雲端備份」並截圖保存你的玩家 ID，新裝置輸入同一組 ID 即可載回。
-    </p>
+    <p style="font-size:.74rem;color:#6b7c68;background:#f7fbf6;border-radius:8px;padding:8px 10px;margin-bottom:18px;line-height:1.6;">📱 圖鑑收集進度儲存於<b>本裝置瀏覽器</b>，無帳號功能，<b>不會跨裝置同步</b>，清除瀏覽器資料時可能遺失。</p>
     <button id="disclaimer-btn" onclick="closeDisclaimer()">我知道了，繼續使用</button>
   </div>
 </div>
@@ -546,8 +543,8 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
       <div class="prog-wrap"><div class="prog-bar" id="prog-bar" style="width:0%"></div></div>
     </div>
     <div id="dex-notice">
-      <span id="dex-notice-icon">☁️</span>
-      <span>收集進度存在<b>本裝置</b>。換手機前請點下方「☁️ 雲端備份」並<b>截圖保存玩家 ID</b>，新裝置用「📲 載入備份」輸入 ID 即可還原。</span>
+      <span id="dex-notice-icon">⚠️</span>
+      <span>圖鑑收集進度僅儲存於<b>本裝置瀏覽器</b>，換手機或清除瀏覽器資料後會重置。可使用下方「雲端備份」跨裝置同步。</span>
       <button id="dex-notice-close" onclick="closeDexNotice()" title="關閉">✕</button>
     </div>
     <div id="dex-body"></div>
@@ -563,26 +560,19 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
 <div id="cloud-panel" onclick="if(event.target===this)closeCloudPanel()">
   <div id="cloud-box">
     <h3>☁️ 圖鑑雲端同步</h3>
-    <p class="cloud-desc" style="background:#f0f7ed;border-radius:8px;padding:10px 12px;color:#3d5a3a;line-height:1.9;margin-bottom:12px;">
-      <b>📲 換裝置步驟：</b><br>
-      1️⃣ 舊手機：點「備份到雲端」<br>
-      2️⃣ 截圖或複製下方玩家 ID<br>
-      3️⃣ 新手機打開網站 → 圖鑑 → 載入備份<br>
-      4️⃣ 輸入玩家 ID → 完成！
-    </p>
+    <p class="cloud-desc">你的專屬玩家 ID，記下來或截圖保存，換裝置時輸入同一組 ID 即可載回收集進度。</p>
     <div class="cloud-id-row">
       <span class="cloud-id-label">我的 ID：</span>
       <span id="cloud-my-id">—</span>
       <button id="btn-copy-id" onclick="copyPlayerId()">複製</button>
     </div>
-    <p style="font-size:.68rem;color:#c0392b;margin:4px 0 10px;">⚠️ 請截圖保存此 ID，遺失後無法找回</p>
     <div id="cloud-status"></div>
     <div class="cloud-btn-row">
       <button class="cloud-btn" id="cloud-btn-save" onclick="cloudSave()">☁️ 備份到雲端</button>
     </div>
-    <div class="cloud-sep">新手機在這裡輸入舊手機的 ID</div>
+    <div class="cloud-sep">或載入其他裝置的備份</div>
     <div class="cloud-input-label">輸入玩家 ID：</div>
-    <input id="cloud-load-input" type="text" placeholder="貼上玩家 ID，例如 PB-XXXXX-XXXXX" autocomplete="off">
+    <input id="cloud-load-input" type="text" placeholder="貼上玩家 ID…" autocomplete="off">
     <div class="cloud-btn-row">
       <button class="cloud-btn" id="cloud-btn-load" onclick="cloudLoad()">📲 載入備份</button>
       <button class="cloud-btn" id="cloud-btn-close" onclick="closeCloudPanel()">取消</button>
@@ -802,8 +792,8 @@ function cloudSave(){
   var btn=document.getElementById('cloud-btn-save');
   btn.disabled=true;
   cloudSetStatus('備份中…',false);
-  var payload={action:'saveProgress',playerId:PLAYER_ID,data:JSON.stringify(owned)};
-  fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+  var params=new URLSearchParams({action:'saveProgress',playerId:PLAYER_ID,data:JSON.stringify(owned)});
+  fetch(GAS_URL+'?'+params.toString())
     .then(function(r){return r.json();})
     .then(function(res){
       if(res.ok) cloudSetStatus('✅ 備份成功！玩家 ID 請截圖保存',false);
@@ -818,8 +808,8 @@ function cloudLoad(){
   var btn=document.getElementById('cloud-btn-load');
   btn.disabled=true;
   cloudSetStatus('載入中…',false);
-  var payload={action:'loadProgress',playerId:input};
-  fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+  var params=new URLSearchParams({action:'loadProgress',playerId:input});
+  fetch(GAS_URL+'?'+params.toString())
     .then(function(r){return r.json();})
     .then(function(res){
       if(res.ok && res.data){
@@ -827,7 +817,6 @@ function cloudLoad(){
           var loaded=JSON.parse(res.data);
           owned=loaded;
           saveOwned();
-          // 若 ID 不同，更新為此 ID（換裝置時繼承）
           if(input!==PLAYER_ID){
             localStorage.setItem('pikmin_player_id',input);
             PLAYER_ID=input;
