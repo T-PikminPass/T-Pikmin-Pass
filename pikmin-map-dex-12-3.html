@@ -329,6 +329,30 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
 .prog-wrap{background:#cde0ca;border-radius:10px;height:8px;overflow:hidden;}
 .prog-bar{background:linear-gradient(90deg,#5BAD5A,#3d8a3c);height:100%;border-radius:10px;transition:width .4s;}
 
+/* 圖鑑搜尋 */
+#dex-search-wrap{
+  display:flex;align-items:center;gap:6px;
+  padding:8px 13px;
+  background:#fff;
+  border-bottom:1px solid #e0dbd4;
+  flex-shrink:0;
+}
+#dex-search-ico{font-size:.85rem;color:#8a978a;flex-shrink:0;}
+#dex-search{
+  flex:1;border:1.5px solid #d8e2d4;border-radius:10px;
+  padding:6px 10px;font-size:.78rem;font-family:inherit;
+  background:#f7faf6;color:#1a2e18;outline:none;
+  scroll-margin-top:80px;
+}
+#dex-search:focus{border-color:#5BAD5A;background:#fff;}
+#dex-search-clear{
+  background:none;border:none;color:#a0a89c;cursor:pointer;
+  font-size:.78rem;padding:4px;display:none;flex-shrink:0;
+}
+#dex-search-wrap.has-text #dex-search-clear{display:flex;}
+.dex-card.dex-hide{display:none;}
+.dex-card.dex-match .dex-card-name{color:#3d8a3c;}
+
 /* 圖鑑 body */
 #dex-body{flex:1;overflow-y:auto;padding:10px 12px 16px;}
 
@@ -550,12 +574,17 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
     </div>
     <div id="dex-notice">
       <span id="dex-notice-icon">⚠️</span>
-      <span>圖鑑收集進度僅儲存於<b>本裝置瀏覽器</b>，無帳號功能，<b>無法跨裝置同步</b>，換手機或清除瀏覽器資料後會重置。若要備份請截圖保存。</span>
+      <span>圖鑑收集進度僅儲存於<b>本裝置瀏覽器</b>，無帳號功能，<b>無法跨裝置同步</b>，換手機或清除瀏覽器資料後會重置。請使用下方「匯出備份碼」保存進度，換裝置後用「匯入備份碼」還原。</span>
       <button id="dex-notice-close" onclick="closeDexNotice()" title="關閉">✕</button>
+    </div>
+    <div id="dex-search-wrap">
+      <span id="dex-search-ico">🔍</span>
+      <input type="text" id="dex-search" placeholder="搜尋飾品，例如：漢堡" oninput="dexSearchInput()" onkeydown="if(event.key==='Enter'){dexSearchJump();this.blur();}" onfocus="dexSearchFocusFix()">
+      <button id="dex-search-clear" onclick="dexSearchClear()" title="清除">✕</button>
     </div>
     <div id="dex-body"></div>
     <div id="dex-foot">
-      <button class="dex-act" id="btn-clear-map" onclick="clearMapFilter()">↩ 清除地圖篩選</button>
+      <button class="dex-act" id="btn-clear-map" onclick="backToMap()">↩ 返回地圖</button>
       <button class="dex-act" id="btn-dex-export" onclick="openDexBackup('export')">🔼 匯出備份碼</button>
       <button class="dex-act" id="btn-dex-import" onclick="openDexBackup('import')">🔽 匯入備份碼</button>
     </div>
@@ -1342,9 +1371,9 @@ var spots=[
   {id:381,name:'郵局',lat:22.6139841,lng:120.3214659,type:'post_office',isPure:true,note:'05/24 已確認是純點',icon:'📮',color:C.pure},
   {id:382,name:'迷你書',lat:22.9067543,lng:120.2240384,type:'minibook',isPure:true,note:'03/05 已確認是純點',icon:'📖',color:C.pure},
   {id:383,name:'迷你書',lat:22.6733397,lng:120.2858627,type:'minibook',isPure:true,note:'05/24 已確認是純點',icon:'📖',color:C.pure},
-  {id:384,name:'迷你書',lat:22.6261417,lng:120.3756785,type:'minibook',isPure:true,note:'04/18 已確認是純點',icon:'📖',color:C.pure},
+  {id:384,name:'公車',lat:22.6261417,lng:120.3756785,type:'bus',isPure:true,note:'06/22 已確認是純點（原迷你書，更正為公車）',icon:'🚌',color:'#FF9800'},
   {id:385,name:'迷你書',lat:22.6035143,lng:120.3933478,type:'minibook',isPure:true,note:'06/20 已確認是純點',icon:'📖',color:C.pure},
-  {id:386,name:'迷你書',lat:22.6499553,lng:120.2775838,type:'minibook',isPure:true,note:'04/19 已確認是純點',icon:'📖',color:C.pure},
+  {id:386,name:'文具',lat:22.6499553,lng:120.2775838,type:'stationery',isPure:false,note:'06/22 已確認',detail:'非純點・文具+迷你書',icon:'📐',color:C.blue},
   {id:387,name:'迷你書',lat:22.6205283,lng:120.3298247,type:'minibook',isPure:true,note:'04/19 已確認是純點',icon:'📖',color:C.pure},
   {id:388,name:'迷你書',lat:22.8557339,lng:120.2583405,type:'minibook',isPure:true,note:'03/05 已確認是純點',icon:'📖',color:C.pure},
   {id:389,name:'迷你書',lat:22.627151,lng:120.357521,type:'minibook',isPure:true,note:'05/24 已確認是純點',icon:'📖',color:C.pure},
@@ -1946,7 +1975,7 @@ var spots=[
   {id:980,name:'主題樂園（非純點）',lat:25.096228,lng:121.513591,type:'theme',isPure:false,note:'03/26 非純點・遊樂園+水邊',icon:'🎡',color:C.blue},
   {id:981,name:'主題樂園',lat:25.1102673,lng:121.5324139,type:'theme',isPure:true,note:'05/28 已確認是純點',icon:'🎡',color:C.pure},
   {id:982,name:'文具（非純點）',lat:25.0898662,lng:121.464459,type:'stationery',isPure:false,note:'非純點・公車+文具',icon:'📐',color:C.blue},
-  {id:983,name:'文具',lat:25.0566449,lng:121.4666597,type:'stationery',isPure:true,note:'06/16 已確認是純點・純點範圍比較小',icon:'📐',color:C.pure},
+  {id:983,name:'文具',lat:25.0566449,lng:121.4666597,type:'stationery',isPure:true,note:'06/16 已確認是純點・純點範圍比較小',addr:'位置大概在13號左右',icon:'📐',color:C.pure},
   {id:984,name:'文具',lat:25.091592,lng:121.446486,type:'stationery',isPure:true,note:'06/12 已確認是純點',icon:'📐',color:C.pure},
   {id:985,name:'文具',lat:25.0067248,lng:121.4676417,type:'stationery',isPure:true,note:'06/12 已確認是純點',icon:'📐',color:C.pure},
   {id:986,name:'文具',lat:25.034069,lng:121.4910299,type:'stationery',isPure:true,note:'06/12 已確認是純點',icon:'📐',color:C.pure},
@@ -1959,6 +1988,14 @@ var spots=[
   {id:993,name:'公車',lat:22.69585,lng:120.43394,type:'bus',isPure:true,note:'06/21 已確認是純點',icon:'🚌',color:'#FF9800'},
   {id:994,name:'文具',lat:22.72827,lng:120.28006,type:'stationery',isPure:true,note:'06/21 已確認是純點',icon:'📐',color:C.pure},
   {id:995,name:'公車',lat:22.68323,lng:120.34314,type:'bus',isPure:true,note:'06/21 已確認是純點',icon:'🚌',color:'#FF9800'},
+  {id:996,name:'工具',lat:25.0214319,lng:121.3005723,type:'tool',isPure:true,note:'06/22 已確認是純點',icon:'🔧',color:C.pure},
+  {id:997,name:'幸運草',lat:24.97764358,lng:121.4468266,type:'clover',isPure:true,note:'06/22 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:998,name:'公車',lat:25.0450834,lng:121.13884422,type:'bus',isPure:true,note:'06/22 已確認是純點',icon:'🚌',color:'#FF9800'},
+  {id:999,name:'幸運草',lat:25.046285,lng:121.138877,type:'clover',isPure:true,note:'06/22 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1000,name:'便利商店',lat:25.0461670,lng:121.1401773,type:'convenience',isPure:true,note:'06/22 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1001,name:'拉麵',lat:24.870706,lng:121.218305,type:'ramen',isPure:true,note:'06/22 已確認是純點',icon:'🍜',color:'#F57F17'},
+  {id:1002,name:'水邊',lat:24.884099,lng:121.221210,type:'water',isPure:true,note:'06/22 已確認是純點',icon:'💧',color:C.blue},
+  {id:1003,name:'橋樑',lat:24.9036591,lng:121.233297,type:'bridge',isPure:true,note:'06/22 已確認是純點',icon:'🌉',color:C.purple},
 ];
 
 // ══════════════════════════════════════
@@ -2654,6 +2691,10 @@ function focusMapType(typeKey){
   }
 }
 
+function backToMap(){
+  closeDex();
+}
+
 function clearMapFilter(){
   mapFocusType=null;
   currentFilter='all';
@@ -2768,7 +2809,17 @@ function jumpToDex(typeKey){
   map.closePopup();
   openDex(typeKey);
 }
-function closeDex(){document.getElementById('dex-overlay').classList.remove('open');}
+function closeDex(){
+  document.getElementById('dex-overlay').classList.remove('open');
+  var modal=document.getElementById('dex-modal');
+  if(modal) modal.style.maxHeight='';
+  /* 清除搜尋狀態，下次開啟回到主畫面 */
+  var input=document.getElementById('dex-search');
+  if(input && input.value){
+    input.value='';
+    dexSearchInput();
+  }
+}
 function closeDexNotice(){
   document.getElementById('dex-notice').classList.add('hidden');
   try{ localStorage.setItem('pikmin_dex_notice_hidden','1'); }catch(e){}
@@ -2779,6 +2830,73 @@ function syncDexNotice(){
   document.getElementById('dex-notice').classList.toggle('hidden', hidden);
 }
 function overlayClick(e){if(e.target===document.getElementById('dex-overlay'))closeDex();}
+
+function dexSearchFocusFix(){
+  setTimeout(function(){
+    var el=document.getElementById('dex-search');
+    if(el) el.scrollIntoView({behavior:'smooth',block:'center'});
+  },300);
+}
+(function(){
+  if(!window.visualViewport) return;
+  window.visualViewport.addEventListener('resize', function(){
+    var overlay=document.getElementById('dex-overlay');
+    if(!overlay || !overlay.classList.contains('open')) return;
+    var modal=document.getElementById('dex-modal');
+    if(modal){
+      var vvh=window.visualViewport.height;
+      var wh=window.innerHeight;
+      /* 鍵盤收起來時 visualViewport.height 會恢復接近 window.innerHeight，
+         此時清除 inline style 讓 CSS 的 max-height:94vh 生效 */
+      if(vvh >= wh*0.85){
+        modal.style.maxHeight='';
+      } else {
+        modal.style.maxHeight=(vvh*0.94)+'px';
+      }
+    }
+    var ae=document.activeElement;
+    if(ae && ae.id==='dex-search'){
+      setTimeout(function(){ ae.scrollIntoView({behavior:'smooth',block:'center'}); },50);
+    }
+  });
+})();
+
+function dexEntryMatches(d, q){
+  if(d.label.indexOf(q)>-1 || (d.sub&&d.sub.indexOf(q)>-1)) return true;
+  if(d.variants) return d.variants.some(function(v){ return v.label.indexOf(q)>-1; });
+  return false;
+}
+function dexSearchInput(){
+  var q=document.getElementById('dex-search').value.trim();
+  document.getElementById('dex-search-wrap').classList.toggle('has-text', !!q);
+  var cards=document.querySelectorAll('.dex-card');
+  if(!q){
+    cards.forEach(function(c){ c.classList.remove('dex-hide','dex-match'); });
+    return;
+  }
+  DEX.forEach(function(d){
+    var card=document.getElementById('dex-card-'+d.key);
+    if(!card) return;
+    var match=dexEntryMatches(d,q);
+    card.classList.toggle('dex-hide', !match);
+    card.classList.toggle('dex-match', match);
+  });
+}
+function dexSearchJump(){
+  var q=document.getElementById('dex-search').value.trim();
+  if(!q) return;
+  var hit=DEX.find(function(d){ return dexEntryMatches(d,q); });
+  if(hit){
+    var el=document.getElementById('dex-card-'+hit.key);
+    if(el) el.scrollIntoView({behavior:'smooth',block:'center'});
+  }
+}
+function dexSearchClear(){
+  var input=document.getElementById('dex-search');
+  input.value='';
+  dexSearchInput();
+  input.focus();
+}
 
 function renderDex(){
   var body=document.getElementById('dex-body');
@@ -2879,6 +2997,7 @@ function renderDex(){
 
     body.appendChild(card);
   });
+  dexSearchInput();
 }
 
 function updateMissBadge(){
