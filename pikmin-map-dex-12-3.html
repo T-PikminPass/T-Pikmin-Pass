@@ -258,19 +258,6 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
 .dexbk-btn{flex:1;border:none;border-radius:10px;padding:11px;font-size:.88rem;font-weight:700;cursor:pointer;}
 .dexbk-btn.primary{background:#5BAD5A;color:#fff;}
 .dexbk-btn.ghost{background:#e6ece3;color:#33402f;}
-
-#dexcloud-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2100;align-items:flex-end;justify-content:center;}
-#dexcloud-overlay.open{display:flex;}
-#dexcloud-modal{background:#f5f0ea;width:100%;max-width:600px;max-height:92vh;overflow-y:auto;border-radius:20px 20px 0 0;box-shadow:0 -6px 40px rgba(0,0,0,.3);padding:18px 18px 26px;box-sizing:border-box;}
-#dexcloud-modal h3{margin:0 0 8px;font-size:1.05rem;color:#33402f;}
-#dexcloud-modal p{font-size:.82rem;color:#5a6856;line-height:1.6;margin:0 0 10px;}
-#dexcloud-id-box{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #cdd9c8;border-radius:10px;padding:10px 12px;margin-bottom:14px;}
-#dexcloud-id-text{flex:1;font-family:monospace;font-size:1.05rem;font-weight:700;letter-spacing:1px;color:#33402f;}
-#dexcloud-id-box button{border:none;background:#e6ece3;color:#33402f;border-radius:8px;padding:7px 12px;font-size:.78rem;font-weight:700;cursor:pointer;}
-#dexcloud-restore-input{width:100%;border:1px solid #cdd9c8;border-radius:10px;padding:11px;font-size:.95rem;font-family:monospace;box-sizing:border-box;margin-bottom:4px;letter-spacing:1px;}
-.dexcloud-status{font-size:.78rem;margin-top:8px;min-height:18px;}
-.dexcloud-status.err{color:#c0392b;}
-.dexcloud-status.ok{color:#2e7d32;}
 #ns-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid #e3ddd3;}
 #ns-hdr h2{font-size:1rem;color:#1a2e18;margin:0;}
 #ns-close{background:none;border:none;font-size:1.1rem;color:#888;cursor:pointer;padding:4px;}
@@ -537,30 +524,6 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
   </div>
 </div>
 
-<!-- 圖鑑雲端備份/還原 Modal -->
-<div id="dexcloud-overlay" onclick="dexcloudOverlayClick(event)">
-  <div id="dexcloud-modal">
-    <h3>☁️ 雲端備份/還原</h3>
-    <p>你的裝置代碼（請抄下來存到備忘錄，換手機時要用這個代碼還原）：</p>
-    <div id="dexcloud-id-box">
-      <span id="dexcloud-id-text">------</span>
-      <button id="dexcloud-id-copy" onclick="dexCloudCopyId()">複製</button>
-    </div>
-    <div class="dexbk-btns">
-      <button class="dexbk-btn primary" onclick="dexCloudBackup()">⬆️ 備份到雲端</button>
-    </div>
-    <div id="dexcloud-bk-status" class="dexcloud-status"></div>
-    <hr style="border:none;border-top:1px solid #d9e2d4;margin:18px 0 14px;">
-    <p>用代碼從雲端還原（換新手機，或本機資料消失時使用）：</p>
-    <input type="text" id="dexcloud-restore-input" placeholder="輸入裝置代碼">
-    <div class="dexbk-btns">
-      <button class="dexbk-btn ghost" onclick="closeDexCloud()">取消</button>
-      <button class="dexbk-btn primary" onclick="dexCloudRestore()">⬇️ 從雲端還原</button>
-    </div>
-    <div id="dexcloud-rs-status" class="dexcloud-status"></div>
-  </div>
-</div>
-
 <div id="leg">
   <span>圖例：</span>
   <div class="li"><div class="ld" style="background:#F5D842"></div>純點</div>
@@ -595,7 +558,6 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
       <button class="dex-act" id="btn-clear-map" onclick="clearMapFilter()">↩ 清除地圖篩選</button>
       <button class="dex-act" id="btn-dex-export" onclick="openDexBackup('export')">🔼 匯出備份碼</button>
       <button class="dex-act" id="btn-dex-import" onclick="openDexBackup('import')">🔽 匯入備份碼</button>
-      <button class="dex-act" id="btn-dex-cloud" onclick="openDexCloud()">☁️ 雲端備份/還原</button>
     </div>
   </div>
 </div>
@@ -846,99 +808,6 @@ function dexbkAction(){
       dexbkSetStatus('備份碼格式錯誤，請確認完整複製貼上', true);
     }
   }
-}
-
-// ══════════════════════════════════════
-// 圖鑑雲端備份/還原（透過 GAS：saveProgress / loadProgress，參數 playerId）
-// ══════════════════════════════════════
-var DEXCLOUD_ID_KEY = 'pikmin_dex_cloud_id';
-function dexCloudGetId(){
-  var id = null;
-  try{ id = localStorage.getItem(DEXCLOUD_ID_KEY); }catch(e){}
-  if(!id){
-    id = dexCloudGenId();
-    try{ localStorage.setItem(DEXCLOUD_ID_KEY, id); }catch(e){}
-  }
-  return id;
-}
-function dexCloudGenId(){
-  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 去除容易混淆的 0,O,1,I
-  var s = '';
-  for(var i=0;i<8;i++){ s += chars.charAt(Math.floor(Math.random()*chars.length)); }
-  return s;
-}
-function openDexCloud(){
-  var id = dexCloudGetId();
-  document.getElementById('dexcloud-id-text').textContent = id;
-  document.getElementById('dexcloud-bk-status').textContent='';
-  document.getElementById('dexcloud-bk-status').className='dexcloud-status';
-  document.getElementById('dexcloud-rs-status').textContent='';
-  document.getElementById('dexcloud-rs-status').className='dexcloud-status';
-  document.getElementById('dexcloud-restore-input').value='';
-  document.getElementById('dexcloud-overlay').classList.add('open');
-}
-function closeDexCloud(){
-  document.getElementById('dexcloud-overlay').classList.remove('open');
-}
-function dexcloudOverlayClick(e){ if(e.target===document.getElementById('dexcloud-overlay')) closeDexCloud(); }
-function dexCloudCopyId(){
-  var id = document.getElementById('dexcloud-id-text').textContent;
-  try{
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(id);
-    }
-  }catch(e){}
-}
-function dexCloudSetStatus(elId, msg, isErr){
-  var el = document.getElementById(elId);
-  el.textContent = msg;
-  el.className = 'dexcloud-status ' + (isErr?'err':'ok');
-}
-function dexCloudBackup(){
-  if(!GAS_URL || GAS_URL.indexOf('YOUR_SCRIPT_ID')!==-1){
-    dexCloudSetStatus('dexcloud-bk-status','尚未設定後端，無法備份',true); return;
-  }
-  var id = dexCloudGetId();
-  dexCloudSetStatus('dexcloud-bk-status','備份中…',false);
-  var url = GAS_URL
-    + '?action=saveProgress'
-    + '&playerId=' + encodeURIComponent(id)
-    + '&data=' + encodeURIComponent(JSON.stringify(owned));
-  fetch(url).then(function(r){ return r.json(); }).then(function(res){
-    if(res && res.ok){
-      dexCloudSetStatus('dexcloud-bk-status','備份成功！',false);
-    } else {
-      dexCloudSetStatus('dexcloud-bk-status','備份失敗：' + (res && res.error ? res.error : '未知錯誤'),true);
-    }
-  }).catch(function(){
-    dexCloudSetStatus('dexcloud-bk-status','備份失敗，請檢查網路連線後再試一次',true);
-  });
-}
-function dexCloudRestore(){
-  if(!GAS_URL || GAS_URL.indexOf('YOUR_SCRIPT_ID')!==-1){
-    dexCloudSetStatus('dexcloud-rs-status','尚未設定後端，無法還原',true); return;
-  }
-  var id = (document.getElementById('dexcloud-restore-input').value||'').trim().toUpperCase();
-  if(!id){ dexCloudSetStatus('dexcloud-rs-status','請輸入裝置代碼',true); return; }
-  dexCloudSetStatus('dexcloud-rs-status','查詢中…',false);
-  var url = GAS_URL + '?action=loadProgress&playerId=' + encodeURIComponent(id);
-  fetch(url).then(function(r){ return r.json(); }).then(function(res){
-    if(!res || !res.ok || !res.data){
-      dexCloudSetStatus('dexcloud-rs-status','找不到這個代碼的雲端備份',true);
-      return;
-    }
-    if(!confirm('還原後會覆蓋目前裝置上的圖鑑收集紀錄，確定要繼續嗎？')) return;
-    var parsed = JSON.parse(res.data);
-    owned = parsed;
-    saveOwned();
-    try{ localStorage.setItem(DEXCLOUD_ID_KEY, id); }catch(e){}
-    dexCloudSetStatus('dexcloud-rs-status','還原成功！圖鑑進度已套用',false);
-    if(typeof renderDex === 'function') renderDex();
-    if(typeof renderTypeButtons === 'function') renderTypeButtons();
-    setTimeout(closeDexCloud, 1000);
-  }).catch(function(){
-    dexCloudSetStatus('dexcloud-rs-status','查詢失敗，請檢查代碼是否正確或稍後再試',true);
-  });
 }
 
 
