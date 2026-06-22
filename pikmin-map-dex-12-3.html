@@ -244,6 +244,20 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
 #ns-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;align-items:flex-end;justify-content:center;}
 #ns-overlay.open{display:flex;}
 #ns-modal{background:#f5f0ea;width:100%;max-width:600px;max-height:92vh;border-radius:20px 20px 0 0;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -6px 40px rgba(0,0,0,.3);}
+
+#dexbk-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2100;align-items:flex-end;justify-content:center;}
+#dexbk-overlay.open{display:flex;}
+#dexbk-modal{background:#f5f0ea;width:100%;max-width:600px;max-height:92vh;border-radius:20px 20px 0 0;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -6px 40px rgba(0,0,0,.3);padding:18px 18px 22px;box-sizing:border-box;}
+#dexbk-modal h3{margin:0 0 8px;font-size:1.05rem;color:#33402f;}
+#dexbk-modal p{font-size:.82rem;color:#5a6856;line-height:1.6;margin:0 0 12px;}
+#dexbk-text{width:100%;min-height:110px;border:1px solid #cdd9c8;border-radius:10px;padding:10px;font-size:.8rem;font-family:monospace;resize:vertical;box-sizing:border-box;background:#fff;color:#33402f;}
+#dexbk-status{font-size:.78rem;margin-top:8px;min-height:18px;}
+#dexbk-status.err{color:#c0392b;}
+#dexbk-status.ok{color:#2e7d32;}
+.dexbk-btns{display:flex;gap:10px;margin-top:14px;}
+.dexbk-btn{flex:1;border:none;border-radius:10px;padding:11px;font-size:.88rem;font-weight:700;cursor:pointer;}
+.dexbk-btn.primary{background:#5BAD5A;color:#fff;}
+.dexbk-btn.ghost{background:#e6ece3;color:#33402f;}
 #ns-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid #e3ddd3;}
 #ns-hdr h2{font-size:1rem;color:#1a2e18;margin:0;}
 #ns-close{background:none;border:none;font-size:1.1rem;color:#888;cursor:pointer;padding:4px;}
@@ -496,6 +510,20 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
   </div>
 </div>
 
+<!-- 圖鑑備份 匯出/匯入 Modal -->
+<div id="dexbk-overlay" onclick="dexbkOverlayClick(event)">
+  <div id="dexbk-modal">
+    <h3 id="dexbk-title">🔼 匯出備份碼</h3>
+    <p id="dexbk-desc"></p>
+    <textarea id="dexbk-text" placeholder="把備份碼貼在這裡…"></textarea>
+    <div id="dexbk-status"></div>
+    <div class="dexbk-btns">
+      <button class="dexbk-btn ghost" onclick="closeDexBackup()">取消</button>
+      <button class="dexbk-btn primary" id="dexbk-action-btn" onclick="dexbkAction()">複製</button>
+    </div>
+  </div>
+</div>
+
 <div id="leg">
   <span>圖例：</span>
   <div class="li"><div class="ld" style="background:#F5D842"></div>純點</div>
@@ -528,6 +556,8 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
     <div id="dex-body"></div>
     <div id="dex-foot">
       <button class="dex-act" id="btn-clear-map" onclick="clearMapFilter()">↩ 清除地圖篩選</button>
+      <button class="dex-act" id="btn-dex-export" onclick="openDexBackup('export')">🔼 匯出備份碼</button>
+      <button class="dex-act" id="btn-dex-import" onclick="openDexBackup('import')">🔽 匯入備份碼</button>
     </div>
   </div>
 </div>
@@ -692,6 +722,94 @@ function saveOwned(){
   try{ localStorage.setItem('pikmin_dex2', JSON.stringify(owned)); }catch(e){}
 }
 var owned = loadOwned();
+
+// ══════════════════════════════════════
+// 圖鑑備份：匯出/匯入（換手機用）
+// ══════════════════════════════════════
+var dexbkMode = 'export';
+function b64EncodeUtf8(str){
+  return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(_,p){ return String.fromCharCode('0x'+p); }));
+}
+function b64DecodeUtf8(str){
+  return decodeURIComponent(Array.prototype.map.call(atob(str), function(c){
+    return '%'+('00'+c.charCodeAt(0).toString(16)).slice(-2);
+  }).join(''));
+}
+function openDexBackup(mode){
+  dexbkMode = mode;
+  var ov = document.getElementById('dexbk-overlay');
+  var title = document.getElementById('dexbk-title');
+  var desc = document.getElementById('dexbk-desc');
+  var ta = document.getElementById('dexbk-text');
+  var status = document.getElementById('dexbk-status');
+  var actBtn = document.getElementById('dexbk-action-btn');
+  status.textContent=''; status.className='';
+  if(mode==='export'){
+    title.textContent = '🔼 匯出備份碼';
+    desc.textContent = '把下面這段文字整段複製起來，存到備忘錄或傳給自己（例如 LINE Keep），到新手機後用「匯入備份碼」貼上即可還原收集進度。';
+    var payload = {v:1, owned:owned, t:Date.now()};
+    ta.value = b64EncodeUtf8(JSON.stringify(payload));
+    ta.readOnly = true;
+    actBtn.textContent = '複製';
+  } else {
+    title.textContent = '🔽 匯入備份碼';
+    desc.textContent = '貼上之前匯出的備份碼，按下「套用」即可還原圖鑑收集進度（會覆蓋目前裝置上的紀錄）。';
+    ta.value = '';
+    ta.readOnly = false;
+    actBtn.textContent = '套用';
+  }
+  ov.classList.add('open');
+  setTimeout(function(){ ta.focus(); if(mode==='export') ta.select(); }, 50);
+}
+function closeDexBackup(){
+  document.getElementById('dexbk-overlay').classList.remove('open');
+}
+function dexbkOverlayClick(e){ if(e.target===document.getElementById('dexbk-overlay')) closeDexBackup(); }
+function dexbkSetStatus(msg, isErr){
+  var status = document.getElementById('dexbk-status');
+  status.textContent = msg;
+  status.className = isErr ? 'err' : 'ok';
+}
+function dexbkAction(){
+  var ta = document.getElementById('dexbk-text');
+  if(dexbkMode==='export'){
+    ta.select();
+    var done=false;
+    try{
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(ta.value).then(function(){
+          dexbkSetStatus('已複製到剪貼簿！', false);
+        }).catch(function(){
+          try{ document.execCommand('copy'); dexbkSetStatus('已複製到剪貼簿！', false); }
+          catch(e2){ dexbkSetStatus('複製失敗，請手動長按選取整段文字複製', true); }
+        });
+        done=true;
+      }
+    }catch(e){}
+    if(!done){
+      try{ document.execCommand('copy'); dexbkSetStatus('已複製到剪貼簿！', false); }
+      catch(e2){ dexbkSetStatus('複製失敗，請手動長按選取整段文字複製', true); }
+    }
+  } else {
+    var raw = ta.value.trim();
+    if(!raw){ dexbkSetStatus('請先貼上備份碼', true); return; }
+    try{
+      var json = b64DecodeUtf8(raw);
+      var payload = JSON.parse(json);
+      if(!payload || typeof payload.owned !== 'object') throw new Error('格式錯誤');
+      if(!confirm('匯入後會覆蓋目前裝置上的圖鑑收集紀錄，確定要繼續嗎？')) return;
+      owned = payload.owned;
+      saveOwned();
+      dexbkSetStatus('匯入成功！圖鑑進度已還原', false);
+      if(typeof renderDex === 'function') renderDex();
+      if(typeof renderTypeButtons === 'function') renderTypeButtons();
+      setTimeout(closeDexBackup, 900);
+    }catch(e){
+      dexbkSetStatus('備份碼格式錯誤，請確認完整複製貼上', true);
+    }
+  }
+}
+
 
 function isColorOwned(typeKey, colorKey){
   return !!(owned[typeKey] && owned[typeKey][colorKey]);
