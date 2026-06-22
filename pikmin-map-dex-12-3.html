@@ -167,6 +167,11 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
 .pu-note{font-size:.71rem;color:#6b7c68;line-height:1.5;}
 .pu-detail{background:#fff8e1;border-left:3px solid #f59e0b;padding:3px 6px;border-radius:0 5px 5px 0;font-size:.69rem;color:#92400e;margin-top:4px;}
 .pu-addr{font-size:.67rem;color:#555;margin-top:3px;}
+.pu-coords{display:flex;align-items:center;justify-content:flex-start;gap:6px;margin-top:4px;padding:2px 0;cursor:pointer;font-size:.62rem;color:#789;white-space:nowrap;}
+.pu-coords:active{opacity:.7;}
+.pu-coords-txt{font-family:monospace;letter-spacing:.1px;}
+.pu-copy-btn{flex-shrink:0;font-weight:700;color:#3d8a3c;background:#e6f4e4;border-radius:6px;padding:2px 6px;}
+.pu-coords-copied .pu-copy-btn{color:#fff;background:#3d8a3c;}
 .pu-tags{margin-top:5px;}
 .pu-tag{display:inline-block;background:#f0f7ed;border:1px solid #cde0ca;border-radius:6px;padding:1px 5px;font-size:.64rem;margin:2px 2px 0 0;}
 .pu-status{margin-top:6px;padding:4px 7px;border-radius:6px;font-size:.68rem;font-weight:600;display:flex;align-items:center;gap:4px;}
@@ -176,7 +181,7 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
 .pu-report{margin-top:8px;padding-top:8px;border-top:1px dashed #e0dbd4;}
 .pu-report-title{font-size:.7rem;font-weight:700;color:#92400e;margin-bottom:5px;}
 .pu-report-types{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
-.pu-rbtn{padding:6px 4px;border-radius:8px;border:1.5px solid #f3c9c9;background:#fff8f6;color:#c0392b;font-family:inherit;font-size:.66rem;font-weight:600;cursor:pointer;text-align:center;line-height:1.3;}
+.pu-rbtn{min-height:44px;display:flex;align-items:center;justify-content:center;padding:6px 4px;border-radius:8px;border:1.5px solid #f3c9c9;background:#fff8f6;color:#c0392b;font-family:inherit;font-size:.66rem;font-weight:600;cursor:pointer;text-align:center;line-height:1.3;}
 .pu-rbtn:hover{background:#fdeaea;border-color:#e84040;}
 .pu-report-send{display:flex;gap:6px;margin-top:2px;}
 .pu-send-btn{flex:1;padding:7px 4px;border-radius:8px;border:none;background:#3d8a3c;color:#fff;font-family:inherit;font-size:.68rem;font-weight:700;cursor:pointer;}
@@ -219,6 +224,7 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
 #search-input:focus{border-color:#5BAD5A;}
 #search-close{background:none;border:none;font-size:1rem;color:#6b7c68;cursor:pointer;padding:4px 6px;}
 #search-results{max-height:50vh;overflow-y:auto;margin-top:8px;}
+.sr-dist{float:right;font-size:.78rem;font-weight:600;color:#3d8a3c;background:#eaf5e8;border-radius:8px;padding:1px 7px;margin-left:6px;white-space:nowrap;}
 .sr-item{padding:9px 8px;border-bottom:1px solid #f0f7ed;cursor:pointer;display:flex;align-items:center;gap:8px;}
 .sr-item:hover{background:#e8f5e6;}
 .sr-icon{font-size:15px;flex-shrink:0;}
@@ -1937,7 +1943,17 @@ var clusterGroup=L.markerClusterGroup({
 }).addTo(map);
 
 // ── 定位我目前的位置 ──
-var userMarker=null, userAccCircle=null;
+var userMarker=null, userAccCircle=null, userLatLng=null;
+function distMeters(lat1,lng1,lat2,lng2){
+  var R=6371000;
+  var dLat=(lat2-lat1)*Math.PI/180, dLng=(lng2-lng1)*Math.PI/180;
+  var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function fmtDist(m){
+  if(m<1000) return Math.round(m)+' 公尺';
+  return (m/1000).toFixed(1)+' 公里';
+}
 function locateMe(){
   var btn=document.getElementById('locate-btn');
   if(!navigator.geolocation){
@@ -1949,6 +1965,7 @@ function locateMe(){
     btn.classList.remove('loading');
     btn.classList.add('active');
     var lat=pos.coords.latitude, lng=pos.coords.longitude, acc=pos.coords.accuracy;
+    userLatLng={lat:lat,lng:lng};
     if(userMarker){ map.removeLayer(userMarker); }
     if(userAccCircle){ map.removeLayer(userAccCircle); }
     userMarker=L.marker([lat,lng],{
@@ -1958,6 +1975,8 @@ function locateMe(){
     }).addTo(map);
     userAccCircle=L.circle([lat,lng],{radius:acc,color:'#4285F4',weight:1,fillColor:'#4285F4',fillOpacity:.12,interactive:false}).addTo(map);
     map.setView([lat,lng], Math.max(map.getZoom(),16));
+    var si=document.getElementById('search-input');
+    if(si && si.value.trim()){ onSearchInput(); }
   },function(err){
     btn.classList.remove('loading');
     var msg='無法取得您的位置';
@@ -2107,6 +2126,8 @@ function startPickLocation(){
   document.getElementById('ns-pick-pin').classList.add('show');
   document.getElementById('locate-btn').style.display='none';
   document.getElementById('newspot-btn').style.display='none';
+  document.getElementById('search-btn').style.display='none';
+  document.getElementById('drawer-toggle').style.display='none';
   if(nsState.lat!=null && nsState.lng!=null){
     map.setView([nsState.lat,nsState.lng], map.getZoom());
   }
@@ -2117,6 +2138,8 @@ function cancelPickLocation(){
   document.getElementById('ns-pick-pin').classList.remove('show');
   document.getElementById('locate-btn').style.display='';
   document.getElementById('newspot-btn').style.display='';
+  document.getElementById('search-btn').style.display='';
+  document.getElementById('drawer-toggle').style.display='';
 }
 function confirmPickLocation(){
   var c=map.getCenter();
@@ -2126,6 +2149,8 @@ function confirmPickLocation(){
   document.getElementById('ns-pick-pin').classList.remove('show');
   document.getElementById('locate-btn').style.display='';
   document.getElementById('newspot-btn').style.display='';
+  document.getElementById('search-btn').style.display='';
+  document.getElementById('drawer-toggle').style.display='';
   nsDropTempMarker();
   openNewSpotModal();
   nsUpdateLocBox(); nsUpdateSubmitState();
@@ -2292,15 +2317,19 @@ function mkReportHtml(s){
   var showConfirm = !showDone && !!ui.type;
   var showPicker = !showDone && !showConfirm;
 
+  function rtLabel(rt){ return (s.isPure===false) ? rt.label.replace('純點','地點') : rt.label; }
+
   var doneRt = saved ? (REPORT_TYPES[saved.type]||{icon:'⚠️',label:saved.type}) : null;
-  var doneText = doneRt ? ('✅ 你已回報：'+doneRt.icon+' '+doneRt.label) : '';
+  var doneText = doneRt ? ('✅ 你已回報：'+doneRt.icon+' '+rtLabel(doneRt)) : '';
 
   var confirmRt = ui.type ? REPORT_TYPES[ui.type] : null;
-  var confirmTitle = confirmRt ? ('回報：'+confirmRt.icon+' '+confirmRt.label) : '回報：';
+  var confirmTitle = confirmRt ? ('回報：'+confirmRt.icon+' '+rtLabel(confirmRt)) : '回報：';
 
-  var typeBtns=Object.keys(REPORT_TYPES).map(function(k){
+  var typeKeys=Object.keys(REPORT_TYPES);
+  if(s.isPure===false){ typeKeys=typeKeys.filter(function(k){return k!=='notpure';}); }
+  var typeBtns=typeKeys.map(function(k){
     var rt=REPORT_TYPES[k];
-    return '<button class="pu-rbtn" onclick="reportPick(this,'+s.id+',\''+k+'\')">'+rt.icon+' '+rt.label+'</button>';
+    return '<button class="pu-rbtn" onclick="reportPick(this,'+s.id+',\''+k+'\')">'+rt.icon+' '+rtLabel(rt)+'</button>';
   }).join('');
 
   return '<div class="pu-report" data-spot="'+s.id+'">'+
@@ -2343,18 +2372,46 @@ function mkIcon(s){
   });
 }
 
+function copyCoords(el,text){
+  function done(ok){
+    var span=el.querySelector('.pu-copy-btn');
+    if(!span) return;
+    var old=span.textContent;
+    span.textContent = ok ? '已複製 ✅' : '複製失敗';
+    el.classList.add('pu-coords-copied');
+    setTimeout(function(){ span.textContent=old; el.classList.remove('pu-coords-copied'); },1400);
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){done(true);}).catch(function(){fallbackCopy(text,done);});
+  } else {
+    fallbackCopy(text,done);
+  }
+}
+function fallbackCopy(text,cb){
+  try{
+    var ta=document.createElement('textarea');
+    ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    var ok=document.execCommand('copy');
+    document.body.removeChild(ta);
+    cb(ok);
+  }catch(e){ cb(false); }
+}
+
 function mkPopupHtml(s){
   var pureBg=s.isPure===true?'#5BAD5A':s.isPure===false?'#888':'#90A4AE';
   var pureLabel=s.isPure===true?'✅ 純點':s.isPure===false?'🔀 非純點':'❓ 未確認';
   var tags=s.desc&&s.desc.length?'<div class="pu-tags">'+s.desc.map(function(d){return '<span class="pu-tag">'+d+'</span>';}).join('')+'</div>':'';
   var detail=s.detail?'<div class="pu-detail">📌 '+s.detail+'</div>':'';
   var addr=s.addr?'<div class="pu-addr">📍 '+s.addr+'</div>':'';
+  var coordStr=s.lat.toFixed(5)+', '+s.lng.toFixed(5);
+  var coordsHtml='<div class="pu-coords" onclick="copyCoords(this,\''+coordStr+'\')"><span class="pu-coords-txt">'+coordStr+'</span><span class="pu-copy-btn">複製</span></div>';
   var cnt=typeOwnedCount(realType(s.type));
   var total=typeTotalColors(realType(s.type));
   var statusHtml='<div class="pu-status" onclick="jumpToDex(\''+realType(s.type)+'\')" style="cursor:pointer;background:'+(cnt===total?'#d4edda':'#fff3cd')+';color:'+(cnt===total?'#3d8a3c':'#856404')+'">'+
     (cnt===total?'✅':'📖')+' 此類型：'+cnt+'/'+total+' 顏色已收集（點擊查看圖鑑）</div>';
   var navUrl='https://www.google.com/maps/dir/?api=1&destination='+s.lat+','+s.lng+'&travelmode=walking';
-  var navBtn='<a href="'+navUrl+'" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:5px;margin-top:8px;padding:7px;background:#4285F4;color:#fff;border-radius:9px;text-decoration:none;font-size:.74rem;font-weight:700;">🧭 Google 導航</a>';
+  var navBtn='<a href="'+navUrl+'" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:5px;margin-top:6px;padding:8px;background:#4285F4;color:#fff;border-radius:9px;text-decoration:none;font-size:.76rem;font-weight:700;">🧭 Google 導航</a>';
   // 類別篩選快捷按鈕
   var dexEntry=DEX.find(function(d){return d.key===realType(s.type);});
   var typeFltBtn='';
@@ -2364,7 +2421,7 @@ function mkPopupHtml(s){
   return '<div class="pu"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:3px;margin-bottom:4px;"><div class="pu-badge" style="background:'+pureBg+'">'+pureLabel+'</div>'+typeFltBtn+'</div>'+
     '<div class="pu-name">'+s.name+'</div>'+
     '<div class="pu-note">'+s.note+'</div>'+
-    addr+detail+tags+statusHtml+navBtn+mkReportHtml(s)+'</div>';
+    navBtn+addr+coordsHtml+detail+tags+statusHtml+mkReportHtml(s)+'</div>';
 }
 
 spots.forEach(function(s){
@@ -2401,22 +2458,31 @@ function toggleSearchPanel(force){
 function onSearchInput(){
   var q=document.getElementById('search-input').value.trim().toLowerCase();
   var box=document.getElementById('search-results');
-  if(!q){ box.innerHTML='<div class="sr-empty" style="color:#9aae96;">搜尋範圍：此地圖內的純點名稱、備註、地址</div>'; return; }
+  if(!q){
+    box.innerHTML='<div class="sr-empty" style="color:#9aae96;">搜尋範圍：此地圖內的純點名稱、備註、地址'+(userLatLng?'（已定位，將顯示距離並依近到遠排序）':'（開啟定位📍可顯示距離）')+'</div>';
+    return;
+  }
   var matches=spots.filter(function(s){
     return (s.name&&s.name.toLowerCase().indexOf(q)!==-1)
       || (s.note&&s.note.toLowerCase().indexOf(q)!==-1)
       || (s.addr&&s.addr.toLowerCase().indexOf(q)!==-1)
       || (s.detail&&s.detail.toLowerCase().indexOf(q)!==-1)
       || (s.desc&&s.desc.some(function(d){return d.toLowerCase().indexOf(q)!==-1;}));
-  }).slice(0,40);
+  });
+  if(userLatLng){
+    matches.forEach(function(s){ s._dist=distMeters(userLatLng.lat,userLatLng.lng,s.lat,s.lng); });
+    matches.sort(function(a,b){ return a._dist-b._dist; });
+  }
+  matches=matches.slice(0,40);
   if(matches.length===0){
     box.innerHTML='<div class="sr-empty">找不到符合「'+q+'」的地點</div>';
     return;
   }
   box.innerHTML=matches.map(function(s){
     var sub=[s.addr,s.note].filter(Boolean).join(' · ');
+    var distHtml = userLatLng ? '<span class="sr-dist">📍 '+fmtDist(s._dist)+'</span>' : '';
     return '<div class="sr-item" data-id="'+s.id+'"><span class="sr-icon">'+s.icon+'</span>'+
-      '<div class="sr-main"><div class="sr-name">'+s.name+'</div><div class="sr-sub">'+sub+'</div></div></div>';
+      '<div class="sr-main"><div class="sr-name">'+s.name+distHtml+'</div><div class="sr-sub">'+sub+'</div></div></div>';
   }).join('');
   box.querySelectorAll('.sr-item').forEach(function(el){
     el.addEventListener('click',function(){
