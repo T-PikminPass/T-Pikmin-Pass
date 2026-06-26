@@ -53,6 +53,23 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
 .fb-type.sel{border-color:#3d8a3c;background:#e6f4e4;color:#1a2e18;}
 .fb-type .fb-ico{font-size:18px;}
 #type-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:100%;}
+#dist-section{width:100%;margin-top:8px;}
+#dist-head{display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:6px 8px;background:#eef5ec;border:1px solid #d4e6d0;border-radius:8px;font-size:13px;color:#1a2e18;user-select:none;}
+#dist-head .dist-arrow{transition:transform .2s;font-size:11px;color:#5a7a55;}
+#dist-section.open #dist-head .dist-arrow{transform:rotate(180deg);}
+#dist-body{display:none;margin-top:8px;}
+#dist-section.open #dist-body{display:block;}
+#dist-search-row{display:flex;gap:6px;margin-bottom:8px;}
+#dist-search{flex:1;padding:7px 10px;border:1px solid #d4e6d0;border-radius:8px;font-size:13px;outline:none;}
+#dist-search:focus{border-color:#3d8a3c;}
+.dist-city-group{margin-bottom:10px;}
+.dist-city-title{font-size:12px;font-weight:600;color:#5a7a55;margin:0 0 5px 2px;}
+.dist-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;}
+.db{position:relative;padding:6px 4px;font-size:12px;line-height:1.2;text-align:center;border:1.5px solid #cde0ca;background:#fff;border-radius:8px;cursor:pointer;color:#1a2e18;transition:all .15s;white-space:normal;}
+.db .db-cnt{display:block;font-size:10px;color:#8aa585;margin-top:1px;}
+.db.sel{border-color:#3d8a3c;background:#e6f4e4;}
+.db.sel .db-check{position:absolute;top:2px;right:3px;font-size:10px;color:#3d8a3c;}
+#dist-loading{font-size:12px;color:#8aa585;padding:6px 2px;}
 
 #type-actions{display:flex;align-items:center;gap:6px;width:100%;margin-top:4px;padding:8px 2px 2px;border-top:1px dashed #cde0ca;position:sticky;bottom:-6px;background:#fff;z-index:2;}
 .type-act-btn{flex:1;padding:6px 8px;border-radius:10px;border:1.5px solid #cde0ca;background:#f0f7ed;color:#1a2e18;font-family:inherit;font-size:.7rem;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;}
@@ -394,6 +411,7 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
 .pb-rock{background:linear-gradient(135deg,#868e96,#495057);}
 .pb-winged{background:linear-gradient(135deg,#ff8fab,#e84393);}
 .pb-ice{background:linear-gradient(135deg,#a8dadc,#48cae4);}
+.pb-crimson{background:linear-gradient(135deg,#c0392b,#7b1010);}
 .pb-rare{background:linear-gradient(135deg,#ffd700,#ff6b9d,#7b2ff7);}
 .dex-variant-hdr{font-size:.74rem;font-weight:700;color:#3d5a3a;margin:8px 0 6px;display:flex;align-items:center;gap:5px;}
 .dex-variant-score{font-size:.68rem;font-weight:700;color:#3d8a3c;margin-left:auto;}
@@ -466,6 +484,22 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
     <div id="type-actions">
       <button class="type-act-btn" id="btn-clear-types" onclick="clearTypeSelection();recomputeCurrent();selId=null;refreshMarkers();render();">清除選擇</button>
       <button class="type-act-btn" id="btn-apply-types" onclick="applyTypeSelection()">✔ 確認套用<span class="type-sel-count" id="type-sel-count" style="display:none">0</span></button>
+    </div>
+    <div id="dist-section">
+      <div id="dist-head" onclick="toggleDistSection()">
+        <span>🏙️ 行政區篩選（可多選）<span id="dist-sel-count" style="display:none;margin-left:6px;background:#3d8a3c;color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;">0</span></span>
+        <span class="dist-arrow">▼</span>
+      </div>
+      <div id="dist-body">
+        <div id="dist-search-row">
+          <input id="dist-search" type="text" placeholder="搜尋行政區，例如：鳳山" oninput="renderDistButtons()" autocomplete="off">
+        </div>
+        <div id="dist-list"><div id="dist-loading">行政區資料載入中…（首次需連網查詢，之後會記住）</div></div>
+        <div id="type-actions" style="margin-top:8px;">
+          <button class="type-act-btn" id="btn-clear-dist" onclick="clearDistSelection();recomputeCurrent();selId=null;refreshMarkers();render();">清除選擇</button>
+          <button class="type-act-btn" id="btn-apply-dist" onclick="applyTypeSelection()">✔ 確認套用</button>
+        </div>
+      </div>
     </div>
   </div>
   <div id="panel-toggle-row">
@@ -620,6 +654,7 @@ var COLORS = [
   {key:'rock',   label:'岩', cls:'pb-rock'},
   {key:'winged', label:'翅', cls:'pb-winged'},
   {key:'ice',    label:'冰', cls:'pb-ice'},
+  {key:'crimson',label:'赤', cls:'pb-crimson'},
   {key:'rare',   label:'稀有', cls:'pb-rare'},
   {key:'yellow1', label:'黃①', cls:'pb-yellow'},
   {key:'yellow2', label:'黃②', cls:'pb-yellow'},
@@ -636,6 +671,7 @@ var NO_ICE_KEYS = ['red','yellow','blue','white','purple','rock','winged'];
 var NO_ICE_RARE_KEYS = NO_ICE_KEYS.concat(['rare']);
 var WITH_RARE_KEYS = DEFAULT_COLOR_KEYS.concat(['rare']);
 var RYB_KEYS = ['red','yellow','blue'];
+var ROADSIDE_KEYS = ['red','yellow','blue','purple','white','ice','crimson','rock'];
 
 // ══════════════════════════════════════
 // 圖鑑類型定義
@@ -646,6 +682,7 @@ var DEX = [
   {key:'cinema_pure', label:'電影院',      icon:'🎬', sub:'爆米花飾品',   color:'#F5D842'},
   {key:'taco',        label:'塔可餅',      icon:'🌮', sub:'塔可餅飾品',   color:'#E84040', colors:NO_ICE_KEYS},
   {key:'kimchi',      label:'韓國泡菜',    icon:'🥘', sub:'泡菜罐飾品',   color:'#E91E8C'},
+  {key:'roadside',    label:'路邊',        icon:'🛣️', sub:'路邊飾品',     color:'#F5D842', colors:ROADSIDE_KEYS},
   {key:'baguette',    label:'法國麵包',    icon:'🥖', sub:'長棍麵包飾品', color:'#8D6E63',
     variants:[
       {key:'baguette_normal', label:'一般', icon:'🥖', colors:NO_ICE_KEYS},
@@ -971,9 +1008,11 @@ function statusMatch(s){
 
 function recomputeCurrent(){
   var keys=Object.keys(selectedTypes);
+  var distKeys=Object.keys(selectedDist);
   current=spots.filter(function(s){
     if(!statusMatch(s)) return false;
     if(keys.length>0 && keys.indexOf(realType(s.type))===-1) return false;
+    if(distKeys.length>0 && (!s.dist || distKeys.indexOf(s.dist)===-1)) return false;
     return true;
   });
 }
@@ -996,6 +1035,180 @@ function popupFltType(typeKey){
   var typeBtnEl=document.querySelector('.fb-type[data-key="'+typeKey+'"]');
   if(typeBtnEl) typeBtnEl.classList.add('sel');
   applyTypeSelection();
+}
+
+// ══════════════════════════════════════
+// 🏙️ 行政區篩選（用座標反查行政區，結果存 localStorage）
+// ══════════════════════════════════════
+var selectedDist = {};      // {'高雄市鳳山區': true}
+var distCache = {};         // {'22.63842,120.35850': '高雄市鳳山區'}
+var distSectionOpen = false;
+var distGeocoding = false;
+
+function distKey(lat,lng){ return lat.toFixed(5)+','+lng.toFixed(5); }
+
+function loadDistCache(){
+  try{ distCache = JSON.parse(localStorage.getItem('pikmin_dist_cache')||'{}'); }catch(e){ distCache={}; }
+}
+function saveDistCache(){
+  try{ localStorage.setItem('pikmin_dist_cache', JSON.stringify(distCache)); }catch(e){}
+}
+
+// 給每個 spot 套上已知的行政區（從快取）
+function applyDistToSpots(){
+  spots.forEach(function(s){
+    var k=distKey(s.lat,s.lng);
+    if(distCache[k]) s.dist=distCache[k];
+  });
+}
+
+function toggleDistSection(){
+  distSectionOpen=!distSectionOpen;
+  var sec=document.getElementById('dist-section');
+  sec.classList.toggle('open', distSectionOpen);
+  if(distSectionOpen){
+    renderDistButtons();
+    startDistGeocode(); // 第一次打開才開始查詢，避免一進頁面就連網
+  }
+}
+
+// 反查單一座標的行政區（Nominatim）
+function reverseGeocode(lat,lng){
+  var url='https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lng+'&zoom=10&accept-language=zh-TW';
+  return fetch(url,{headers:{'Accept':'application/json'}})
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      var a=j.address||{};
+      var city=a.city||a.county||a.state||a.town||'';
+      var dist=a.suburb||a.city_district||a.town||a.village||a.district||a.borough||'';
+      // 台灣慣例：縣市 + 區/鄉/鎮/市
+      city=(city||'').replace(/^臺/,'台');
+      dist=(dist||'').replace(/^臺/,'台');
+      if(city && dist && city!==dist) return city+dist;
+      if(dist) return dist;
+      if(city) return city;
+      return '';
+    })
+    .catch(function(){ return ''; });
+}
+
+// 背景逐筆查詢未知的 spot（限速，避免被 Nominatim 擋）
+function startDistGeocode(){
+  if(distGeocoding) return;
+  distGeocoding=true;
+  var todo=[];
+  var seen={};
+  spots.forEach(function(s){
+    var k=distKey(s.lat,s.lng);
+    if(distCache[k]){ s.dist=distCache[k]; return; }
+    if(seen[k]) return;
+    seen[k]=true;
+    todo.push(s);
+  });
+  if(todo.length===0){ distGeocoding=false; renderDistButtons(); return; }
+  var i=0, done=0;
+  function step(){
+    if(i>=todo.length){
+      distGeocoding=false;
+      saveDistCache();
+      renderDistButtons();
+      return;
+    }
+    var s=todo[i++];
+    var k=distKey(s.lat,s.lng);
+    reverseGeocode(s.lat,s.lng).then(function(name){
+      if(name){
+        distCache[k]=name;
+        // 套到所有同座標的 spot
+        spots.forEach(function(o){ if(distKey(o.lat,o.lng)===k) o.dist=distCache[k]; });
+      }
+      // 查不到就先略過（不寫入快取），下次開啟會再試
+      done++;
+      if(done%10===0){ saveDistCache(); renderDistButtons(); }
+      var ld=document.getElementById('dist-loading');
+      if(ld) ld.textContent='行政區資料載入中… '+done+' / '+todo.length+'（之後會記住，不需重查）';
+      setTimeout(step, 1100); // Nominatim 建議 1 req/sec
+    });
+  }
+  step();
+}
+
+// 依城市分組列出行政區
+function renderDistButtons(){
+  var listEl=document.getElementById('dist-list');
+  if(!listEl) return;
+  applyDistToSpots();
+  var q=(document.getElementById('dist-search')||{}).value||'';
+  q=q.trim();
+
+  // 統計各行政區數量
+  var counts={}; // dist -> count
+  spots.forEach(function(s){
+    if(!s.dist || s.dist==='（未知）') return;
+    counts[s.dist]=(counts[s.dist]||0)+1;
+  });
+  var names=Object.keys(counts);
+  if(names.length===0){
+    listEl.innerHTML='<div id="dist-loading">'+(distGeocoding?'行政區資料載入中…請稍候':'尚無行政區資料，請開啟網路後重新打開此區塊')+'</div>';
+    updateDistApplyBtn();
+    return;
+  }
+
+  // 依城市分組（取「區/鄉/鎮/市」前的縣市名）
+  function cityOf(name){
+    var m=name.match(/^(.+?[市縣])(.+)$/);
+    return m? m[1] : '其他';
+  }
+  var groups={};
+  names.forEach(function(n){
+    if(q && n.indexOf(q)===-1) return;
+    var c=cityOf(n);
+    (groups[c]=groups[c]||[]).push(n);
+  });
+
+  var cities=Object.keys(groups).sort();
+  if(cities.length===0){
+    listEl.innerHTML='<div id="dist-loading">找不到符合「'+q+'」的行政區</div>';
+    return;
+  }
+
+  var html='';
+  cities.forEach(function(c){
+    var ds=groups[c].sort();
+    html+='<div class="dist-city-group"><div class="dist-city-title">'+c+'</div><div class="dist-btns">';
+    ds.forEach(function(n){
+      var label=n.replace(/^.+?[市縣]/,''); // 只顯示區名，城市已在標題
+      var sel=selectedDist[n]?' sel':'';
+      html+='<button class="db'+sel+'" data-dist="'+n+'" onclick="toggleDistBtn(\''+n.replace(/'/g,"\\'")+'\')">'
+          +(selectedDist[n]?'<span class="db-check">✓</span>':'')
+          +label+'<span class="db-cnt">'+counts[n]+'</span></button>';
+    });
+    html+='</div></div>';
+  });
+  if(distGeocoding){
+    html+='<div id="dist-loading">仍在查詢更多行政區…</div>';
+  }
+  listEl.innerHTML=html;
+  updateDistApplyBtn();
+}
+
+function toggleDistBtn(name){
+  if(selectedDist[name]) delete selectedDist[name];
+  else selectedDist[name]=true;
+  renderDistButtons();
+}
+
+function clearDistSelection(){
+  selectedDist={};
+  renderDistButtons();
+}
+
+function updateDistApplyBtn(){
+  var n=Object.keys(selectedDist).length;
+  var cntEl=document.getElementById('dist-sel-count');
+  if(!cntEl) return;
+  if(n>0){ cntEl.style.display='inline'; cntEl.textContent=n; }
+  else { cntEl.style.display='none'; }
 }
 
 
@@ -2353,6 +2566,572 @@ var spots=[
   {id:1358,name:'迷你書',lat:23.326751,lng:120.403792,type:'minibook',isPure:true,note:'06 23已確認是純點',icon:'📚',color:C.pure},
   {id:1359,name:'服裝店',lat:24.986337,lng:121.306537,type:'clothing',isPure:true,note:'06/23 已確認是純點',icon:'👕',color:C.pure},
   {id:1360,name:'電車',lat:25.18826,lng:121.4182,type:'tram',isPure:true,note:'06/23 已確認是純點',icon:'🚃',color:'#26A69A'},
+  {id:1361,name:'咖啡杯',lat:24.983702,lng:121.305102,type:'coffee',isPure:true,note:'06/23 已確認是純點',icon:'☕',color:C.orange},
+  {id:1362,name:'咖啡杯',lat:24.9665426,lng:121.2281708,type:'coffee',isPure:true,note:'06/23 已確認是純點',icon:'☕',color:C.orange},
+  {id:1363,name:'咖啡杯',lat:24.9619827,lng:121.1662445,type:'coffee',isPure:false,note:'非純點・咖啡杯+餐廳',detail:'非純點・咖啡杯+餐廳',icon:'☕',color:C.blue},
+  {id:1364,name:'咖啡杯',lat:25.0072837,lng:121.203851,type:'coffee',isPure:true,note:'06/23 已確認是純點',icon:'☕',color:C.orange},
+  {id:1365,name:'幸運草',lat:24.944077,lng:121.23115,type:'clover',isPure:true,note:'06/23 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1366,name:'幸運草',lat:24.9415161,lng:121.2290617,type:'clover',isPure:true,note:'06/23 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1367,name:'幸運草',lat:24.950899,lng:121.221527,type:'clover',isPure:true,note:'06/23 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1368,name:'幸運草',lat:24.942779,lng:121.2188396,type:'clover',isPure:true,note:'06/23 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1369,name:'幸運草',lat:24.9521003,lng:121.2183328,type:'clover',isPure:true,note:'06/23 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1370,name:'幸運草',lat:24.97014,lng:121.2356962,type:'clover',isPure:true,note:'06/23 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1371,name:'幸運草',lat:24.9634314,lng:121.2406974,type:'clover',isPure:true,note:'06/23 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1372,name:'幸運草',lat:24.948697,lng:121.2458486,type:'clover',isPure:true,note:'06/23 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1373,name:'幸運草',lat:24.9339311,lng:121.244976,type:'clover',isPure:true,note:'06/23 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1374,name:'幸運草',lat:24.9266886,lng:121.2526838,type:'clover',isPure:true,note:'06/23 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1375,name:'幸運草',lat:24.9563929,lng:121.1754693,type:'clover',isPure:true,note:'06/23 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1376,name:'幸運草',lat:25.0109441,lng:121.2074863,type:'clover',isPure:true,note:'06/23 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1377,name:'幸運草',lat:25.0176101,lng:121.2216667,type:'clover',isPure:true,note:'06/23 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1378,name:'幸運草',lat:25.0060813,lng:121.2113983,type:'clover',isPure:true,note:'06/23 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1379,name:'幸運草',lat:24.961261,lng:121.158757,type:'clover',isPure:true,note:'06/23 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1380,name:'幸運草',lat:24.9719253,lng:121.1003375,type:'clover',isPure:true,note:'06/24 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1381,name:'幸運草',lat:25.0057141,lng:121.0477227,type:'clover',isPure:true,note:'06/24 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1382,name:'幸運草',lat:25.0253312,lng:121.0573059,type:'clover',isPure:true,note:'06/24 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1383,name:'幸運草',lat:25.0360995,lng:121.0814298,type:'clover',isPure:true,note:'06/24 已確認是純點',icon:'🍀',color:'#43A047',addr:'轉彎處'},
+  {id:1384,name:'幸運草',lat:25.0467466,lng:121.0761536,type:'clover',isPure:true,note:'06/24 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1385,name:'咖啡杯',lat:25.053999,lng:121.123521,type:'coffee',isPure:true,note:'06/24 已確認是純點',icon:'☕',color:C.orange},
+  {id:1386,name:'幸運草',lat:25.0402125,lng:121.1381037,type:'clover',isPure:true,note:'06/24 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1387,name:'幸運草',lat:25.0504383,lng:121.1686742,type:'clover',isPure:true,note:'06/24 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1388,name:'咖啡杯',lat:25.0612582,lng:121.2041873,type:'coffee',isPure:true,note:'06/24 已確認是純點',icon:'☕',color:C.orange},
+  {id:1389,name:'幸運草',lat:25.055616,lng:121.2951988,type:'clover',isPure:true,note:'06/24 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1390,name:'咖啡杯',lat:25.0473198,lng:121.2982346,type:'coffee',isPure:false,note:'06/24 非純點・咖啡杯+餐廳',detail:'非純點・咖啡杯+餐廳',icon:'☕',color:C.blue},
+  {id:1391,name:'幸運草',lat:25.0296144,lng:121.2993093,type:'clover',isPure:true,note:'06/24 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1392,name:'幸運草',lat:25.00958,lng:121.3128943,type:'clover',isPure:true,note:'06/24 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1393,name:'咖啡杯',lat:25.008206,lng:121.3213579,type:'coffee',isPure:true,note:'06/24 已確認是純點',icon:'☕',color:C.orange},
+  {id:1394,name:'咖啡杯',lat:25.006527,lng:121.3196913,type:'coffee',isPure:true,note:'06/24 已確認是純點',icon:'☕',color:C.orange},
+  {id:1395,name:'幸運草',lat:25.0030384,lng:121.3149079,type:'clover',isPure:true,note:'06/25 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1396,name:'咖啡杯',lat:25.011085,lng:121.303064,type:'coffee',isPure:true,note:'06/25 已確認是純點',icon:'☕',color:C.orange},
+  {id:1397,name:'幸運草',lat:25.0198285,lng:121.3059669,type:'clover',isPure:true,note:'06/25 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1398,name:'咖啡杯',lat:25.021239,lng:121.29969,type:'coffee',isPure:false,note:'06/25 非純點・咖啡杯+工具',detail:'非純點・咖啡杯+工具',icon:'☕',color:C.blue},
+  {id:1399,name:'幸運草',lat:25.0199434,lng:121.2935165,type:'clover',isPure:true,note:'06/25 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1400,name:'咖啡杯',lat:25.0235262,lng:121.292819,type:'coffee',isPure:true,note:'06/25 已確認是純點',icon:'☕',color:C.orange},
+  {id:1401,name:'幸運草',lat:25.0010549,lng:121.3031919,type:'clover',isPure:true,note:'06/25 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1402,name:'咖啡杯',lat:24.9969552,lng:121.3040293,type:'coffee',isPure:true,note:'06/25 已確認是純點',icon:'☕',color:C.orange,addr:'範圍比較小'},
+  {id:1403,name:'幸運草',lat:24.9968035,lng:121.2937052,type:'clover',isPure:true,note:'06/25 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1404,name:'咖啡杯',lat:24.9987028,lng:121.313876,type:'coffee',isPure:true,note:'06/25 已確認是純點',icon:'☕',color:C.orange},
+  {id:1405,name:'幸運草',lat:24.9869233,lng:121.3156398,type:'clover',isPure:true,note:'06/25 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1406,name:'幸運草',lat:24.9787024,lng:121.3082563,type:'clover',isPure:true,note:'06/25 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1407,name:'幸運草',lat:24.9887448,lng:121.2904088,type:'clover',isPure:true,note:'06/25 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1408,name:'幸運草',lat:24.9799825,lng:121.273561,type:'clover',isPure:true,note:'06/25 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1409,name:'咖啡杯',lat:24.975792,lng:121.25905327,type:'coffee',isPure:true,note:'06/25 已確認是純點',icon:'☕',color:C.orange,addr:'純點範圍小容易跑出拉麵'},
+  {id:1410,name:'幸運草',lat:24.9536481,lng:121.2621192,type:'clover',isPure:true,note:'06/25 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1411,name:'幸運草',lat:24.9441033,lng:121.2505181,type:'clover',isPure:true,note:'06/25 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1412,name:'幸運草',lat:24.9367481,lng:121.2373868,type:'clover',isPure:true,note:'06/25 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1413,name:'咖啡杯',lat:24.9505757,lng:121.2372566,type:'coffee',isPure:true,note:'06/26 已確認是純點',icon:'☕',color:C.orange},
+  {id:1414,name:'幸運草',lat:24.9276053,lng:121.22502,type:'clover',isPure:true,note:'06/26 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1415,name:'咖啡杯',lat:24.856658,lng:121.219288,type:'coffee',isPure:true,note:'06/26 已確認是純點',icon:'☕',color:C.orange},
+  {id:1416,name:'幸運草',lat:24.8308387,lng:121.1910583,type:'clover',isPure:true,note:'06/26 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1417,name:'幸運草',lat:24.9144925,lng:121.1829103,type:'clover',isPure:true,note:'06/26 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1418,name:'幸運草',lat:24.9113737,lng:121.1585278,type:'clover',isPure:true,note:'06/26 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1419,name:'咖啡杯',lat:24.91205,lng:121.150576,type:'coffee',isPure:true,note:'06/26 已確認是純點',icon:'☕',color:C.orange},
+  {id:1420,name:'幸運草',lat:24.9122109,lng:121.208382,type:'clover',isPure:true,note:'06/26 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1421,name:'幸運草',lat:24.9036352,lng:121.2132837,type:'clover',isPure:true,note:'06/26 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1422,name:'幸運草',lat:24.9266412,lng:121.2861966,type:'clover',isPure:true,note:'06/26 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1423,name:'幸運草',lat:24.9447103,lng:121.2961445,type:'clover',isPure:true,note:'06/26 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1424,name:'幸運草',lat:24.9567085,lng:121.2942158,type:'clover',isPure:true,note:'06/26 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1425,name:'幸運草',lat:24.9709341,lng:121.2990438,type:'clover',isPure:true,note:'06/26 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1426,name:'咖啡杯',lat:24.960024,lng:121.3044693,type:'coffee',isPure:true,note:'06/26 已確認是純點',icon:'☕',color:C.orange},
+  {id:1427,name:'幸運草',lat:24.9615655,lng:121.2136981,type:'clover',isPure:true,note:'06/26 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1428,name:'幸運草',lat:24.9498049,lng:121.2089638,type:'clover',isPure:true,note:'06/26 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1429,name:'咖啡杯',lat:24.8743401,lng:121.2864446,type:'coffee',isPure:true,note:'06/26 已確認是純點',icon:'☕',color:C.orange},
+  {id:1430,name:'大學/學院',lat:24.948228,lng:121.230707,type:'university',isPure:true,note:'06/23 已確認是純點',icon:'🎓',color:C.pure},
+  {id:1431,name:'大學/學院',lat:24.9591577,lng:121.2475934,type:'university',isPure:true,note:'06/23 已確認是純點',icon:'🎓',color:C.pure},
+  {id:1432,name:'大學/學院',lat:24.970274,lng:121.189088,type:'university',isPure:true,note:'06/22 已確認是純點',icon:'🎓',color:C.pure},
+  {id:1433,name:'美容院/剪刀',lat:25.0121471,lng:121.2187243,type:'salon',isPure:true,note:'06/23 已確認是純點',icon:'✂️',color:C.pure},
+  {id:1434,name:'美容院/剪刀',lat:25.0000218,lng:121.2908723,type:'salon',isPure:false,note:'06/25 非純點・美容院+幸運草',detail:'非純點・美容院+幸運草',icon:'✂️',color:C.blue},
+  {id:1435,name:'美容院/剪刀',lat:24.9975258,lng:121.3007668,type:'salon',isPure:true,note:'06/25 已確認是純點',icon:'✂️',color:C.pure},
+  {id:1436,name:'美容院/剪刀',lat:24.9984646,lng:121.3100874,type:'salon',isPure:false,note:'06/25 非純點・洗衣店+美容院',detail:'非純點・洗衣店+美容院',icon:'✂️',color:C.blue},
+  {id:1437,name:'迷你書',lat:24.9945709,lng:121.3224915,type:'minibook',isPure:false,note:'06/25 非純點・迷你書+體育館',detail:'非純點・迷你書+體育館',icon:'📚',color:C.blue},
+  {id:1438,name:'郵局',lat:24.9840478,lng:121.3215802,type:'post_office',isPure:true,note:'06/25 已確認是純點',icon:'📮',color:C.pure},
+  {id:1439,name:'迷你書',lat:24.98757,lng:121.290971,type:'minibook',isPure:true,note:'06/25 已確認是純點',icon:'📚',color:C.pure},
+  {id:1440,name:'大學/學院',lat:24.9450307,lng:121.260916,type:'university',isPure:true,note:'06/25 已確認是純點',icon:'🎓',color:C.pure},
+  {id:1441,name:'大學/學院',lat:24.9370988,lng:121.2583293,type:'university',isPure:true,note:'06/25 已確認是純點',icon:'🎓',color:C.pure},
+  {id:1442,name:'大學/學院',lat:24.9007381,lng:121.2295022,type:'university',isPure:true,note:'06/26 已確認是純點',icon:'🎓',color:C.pure},
+  {id:1443,name:'迷你書',lat:24.8643191,lng:121.2156352,type:'minibook',isPure:true,note:'06/26 已確認是純點',icon:'📚',color:C.pure},
+  {id:1444,name:'主題樂園',lat:24.8363152,lng:121.2390901,type:'theme',isPure:true,note:'06/26 已確認是純點',icon:'🎡',color:C.pure,addr:'十一份觀光文化園區'},
+  {id:1445,name:'主題樂園',lat:24.830174,lng:121.185767,type:'theme',isPure:true,note:'06/26 已確認是純點',icon:'🎡',color:C.pure},
+  {id:1446,name:'主題樂園',lat:24.8363111,lng:121.179155,type:'theme',isPure:true,note:'06/26 已確認是純點',icon:'🎡',color:C.pure},
+  {id:1447,name:'郵局',lat:24.9171223,lng:121.209139,type:'post_office',isPure:true,note:'06/26 已確認是純點',icon:'📮',color:C.pure},
+  {id:1448,name:'郵局',lat:24.8971862,lng:121.2109554,type:'post_office',isPure:true,note:'06/26 已確認是純點',icon:'📮',color:C.pure},
+  {id:1449,name:'大學/學院',lat:24.8814118,lng:121.2686519,type:'university',isPure:true,note:'06/26 已確認是純點',icon:'🎓',color:C.pure},
+  {id:1450,name:'美容院/剪刀',lat:24.9113142,lng:121.2824431,type:'salon',isPure:true,note:'06/26 已確認是純點',icon:'✂️',color:C.pure},
+  {id:1451,name:'迷你書',lat:24.9210357,lng:121.2912469,type:'minibook',isPure:true,note:'06/26 已確認是純點',icon:'📚',color:C.pure},
+  {id:1452,name:'郵局',lat:24.971718,lng:121.237599,type:'post_office',isPure:true,note:'06/23 已確認是純點',icon:'📮',color:C.pure},
+  {id:1453,name:'郵局',lat:25.0653366,lng:121.19827,type:'post_office',isPure:true,note:'06/24 已確認是純點',icon:'📮',color:C.pure},
+  {id:1454,name:'大學/學院',lat:24.9321427,lng:121.3017154,type:'university',isPure:true,note:'06/26 已確認是純點',icon:'🎓',color:C.pure},
+  {id:1455,name:'郵局',lat:24.8490115,lng:121.2289097,type:'post_office',isPure:true,note:'06/26 已確認是純點',icon:'📮',color:C.pure},
+  {id:1456,name:'郵局',lat:24.8637567,lng:121.2128674,type:'post_office',isPure:true,note:'06/26 已確認是純點',icon:'📮',color:C.pure},
+  {id:1457,name:'郵局',lat:24.9537714,lng:121.1892527,type:'post_office',isPure:true,note:'06/23 已確認是純點',icon:'📮',color:C.pure},
+  {id:1458,name:'郵局',lat:25.010411,lng:121.1382117,type:'post_office',isPure:true,note:'06/22 已確認是純點',icon:'📮',color:C.pure},
+  {id:1459,name:'迷你書',lat:25.0342341,lng:121.0823792,type:'minibook',isPure:true,note:'06/24 已確認是純點',icon:'📚',color:C.pure},
+  {id:1460,name:'迷你書',lat:25.0481241,lng:121.1453792,type:'minibook',isPure:true,note:'06/24 已確認是純點',icon:'📚',color:C.pure},
+  {id:1461,name:'郵局',lat:24.9459082,lng:121.2090452,type:'post_office',isPure:true,note:'06/26 已確認是純點',icon:'📮',color:C.pure},
+  {id:1462,name:'迷你書',lat:25.0152171,lng:121.1347158,type:'minibook',isPure:true,note:'06/23 已確認是純點',icon:'📚',color:C.pure},
+  {id:1463,name:'主題樂園',lat:24.8804806,lng:121.2925315,type:'theme',isPure:true,note:'06/26 已確認是純點',icon:'🎡',color:C.pure,addr:'生活玩家寵物水族館'},
+  {id:1464,name:'服飾店',lat:24.9557464,lng:121.2332074,type:'clothing',isPure:true,note:'06/23 已確認是純點',icon:'👕',color:C.pure},
+  {id:1465,name:'牙刷',lat:24.945504,lng:121.2277629,type:'toothbrush',isPure:true,note:'06/23 已確認是純點',icon:'🪥',color:C.pure},
+  {id:1466,name:'超市',lat:24.9658167,lng:121.2327906,type:'supermarket',isPure:true,note:'06/23 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1467,name:'超市',lat:24.94218,lng:121.221466,type:'supermarket',isPure:true,note:'06/23 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1468,name:'超市',lat:24.9416465,lng:121.2465403,type:'supermarket',isPure:true,note:'06/23 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1469,name:'便利商店',lat:24.9497289,lng:121.2314648,type:'convenience',isPure:true,note:'06/23 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1470,name:'超市',lat:24.951842,lng:121.231011,type:'supermarket',isPure:true,note:'06/23 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1471,name:'超市',lat:24.9507905,lng:121.2240195,type:'supermarket',isPure:true,note:'06/23 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1472,name:'便利商店',lat:24.98134,lng:121.30385,type:'convenience',isPure:true,note:'06/23 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1473,name:'便利商店',lat:24.9396877,lng:121.2452427,type:'convenience',isPure:true,note:'06/23 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1474,name:'超市',lat:24.9307902,lng:121.249614,type:'supermarket',isPure:true,note:'06/23 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1475,name:'便利商店',lat:24.9297502,lng:121.2497263,type:'convenience',isPure:true,note:'06/23 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1476,name:'便利商店',lat:24.9936423,lng:121.1676976,type:'convenience',isPure:true,note:'06/22 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1477,name:'超市',lat:24.9947682,lng:121.1646405,type:'supermarket',isPure:true,note:'06/22 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1478,name:'服飾店',lat:24.9913883,lng:121.1729524,type:'clothing',isPure:true,note:'06/23 已確認是純點',icon:'👕',color:C.pure},
+  {id:1479,name:'超市',lat:24.9575259,lng:121.1726053,type:'supermarket',isPure:true,note:'06/23 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1480,name:'便利商店',lat:24.9580561,lng:121.1736532,type:'convenience',isPure:true,note:'06/23 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1481,name:'服飾店',lat:24.9564613,lng:121.1713383,type:'clothing',isPure:true,note:'06/23 已確認是純點',icon:'👕',color:C.pure},
+  {id:1482,name:'超市',lat:25.0110197,lng:121.2066053,type:'supermarket',isPure:true,note:'06/23 已確認是純點',icon:'🛒',color:C.pure,addr:'青埔國民中學對面'},
+  {id:1483,name:'便利商店',lat:25.017936,lng:121.221986,type:'convenience',isPure:true,note:'06/23 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1484,name:'服飾店',lat:25.0130018,lng:121.218909,type:'clothing',isPure:true,note:'06/23 已確認是純點',icon:'👕',color:C.pure},
+  {id:1485,name:'超市',lat:24.9654159,lng:121.1491145,type:'supermarket',isPure:true,note:'06/23 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1486,name:'便利商店',lat:24.975651,lng:121.105506,type:'convenience',isPure:true,note:'06/24 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1487,name:'牙刷',lat:25.0351347,lng:121.0761472,type:'toothbrush',isPure:true,note:'06/24 已確認是純點',icon:'🪥',color:C.pure,addr:'匯安汽車材料行門口'},
+  {id:1488,name:'便利商店',lat:25.0531992,lng:121.1244564,type:'convenience',isPure:true,note:'06/24 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1489,name:'牙刷',lat:25.041782,lng:121.135074,type:'toothbrush',isPure:true,note:'06/24 已確認是純點',icon:'🪥',color:C.pure},
+  {id:1490,name:'超市',lat:25.0447931,lng:121.1372603,type:'supermarket',isPure:true,note:'06/24 已確認是純點',icon:'🛒',color:C.pure,addr:'億客成生鮮超市'},
+  {id:1491,name:'超市',lat:25.0390913,lng:121.130958,type:'supermarket',isPure:true,note:'06/24 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1492,name:'便利商店',lat:25.02726,lng:121.109706,type:'convenience',isPure:true,note:'06/23 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1493,name:'便利商店',lat:25.0664753,lng:121.1813346,type:'convenience',isPure:true,note:'06/24 已確認是純點',icon:'🏪',color:C.pure,addr:'附近都是便利店純點'},
+  {id:1494,name:'便利商店',lat:25.0558924,lng:121.1961087,type:'convenience',isPure:true,note:'06/24 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1495,name:'超市',lat:25.062578,lng:121.198624,type:'supermarket',isPure:true,note:'06/24 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1496,name:'服飾店',lat:25.0608337,lng:121.2003834,type:'clothing',isPure:true,note:'06/24 已確認是純點',icon:'👕',color:C.pure,addr:'思夢樂'},
+  {id:1497,name:'牙刷',lat:25.0645941,lng:121.1983574,type:'toothbrush',isPure:false,note:'06/23 非純點・牙刷+化妝品',detail:'非純點・牙刷+化妝品',icon:'🪥',color:C.blue},
+  {id:1498,name:'便利商店',lat:25.0640799,lng:121.2012347,type:'convenience',isPure:true,note:'06/24 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1499,name:'牙刷',lat:25.0615097,lng:121.2088869,type:'toothbrush',isPure:true,note:'06/24 已確認是純點',icon:'🪥',color:C.pure},
+  {id:1500,name:'便利商店',lat:25.0596942,lng:121.2331765,type:'convenience',isPure:true,note:'06/24 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1501,name:'便利商店',lat:25.0665487,lng:121.2907171,type:'convenience',isPure:true,note:'06/24 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1502,name:'超市',lat:25.061094,lng:121.2941372,type:'supermarket',isPure:true,note:'06/24 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1503,name:'超市',lat:25.0571635,lng:121.2963957,type:'supermarket',isPure:true,note:'06/25 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1504,name:'服飾店',lat:25.0512488,lng:121.2856614,type:'clothing',isPure:true,note:'06/24 已確認是純點',icon:'👕',color:C.pure},
+  {id:1505,name:'超市',lat:24.954791,lng:121.2113168,type:'supermarket',isPure:true,note:'06/26 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1506,name:'服飾店',lat:25.0307537,lng:121.2966006,type:'clothing',isPure:true,note:'06/24 已確認是純點',icon:'👕',color:C.pure},
+  {id:1507,name:'牙刷',lat:25.0326996,lng:121.304872,type:'toothbrush',isPure:true,note:'06/24 已確認是純點',icon:'🪥',color:C.pure},
+  {id:1508,name:'便利商店',lat:25.0298948,lng:121.2980255,type:'convenience',isPure:true,note:'06/24 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1509,name:'服飾店',lat:25.0241449,lng:121.3114111,type:'clothing',isPure:true,note:'06/24 已確認是純點',icon:'👕',color:C.pure},
+  {id:1510,name:'超市',lat:25.0126567,lng:121.3111261,type:'supermarket',isPure:true,note:'06/24 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1511,name:'便利商店',lat:25.0120157,lng:121.3113407,type:'convenience',isPure:true,note:'06/24 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1512,name:'超市',lat:25.004529,lng:121.3222938,type:'supermarket',isPure:true,note:'06/24 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1513,name:'便利商店',lat:25.0081671,lng:121.305459,type:'convenience',isPure:true,note:'06/25 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1514,name:'超市',lat:25.008422,lng:121.3061266,type:'supermarket',isPure:true,note:'06/25 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1515,name:'超市',lat:25.0130516,lng:121.2965535,type:'supermarket',isPure:true,note:'06/25 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1516,name:'便利商店',lat:25.0053128,lng:121.2991702,type:'convenience',isPure:true,note:'06/25 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1517,name:'超市',lat:25.0044978,lng:121.3026195,type:'supermarket',isPure:true,note:'06/25 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1518,name:'便利商店',lat:24.996273,lng:121.298746,type:'convenience',isPure:true,note:'06/25 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1519,name:'牙刷',lat:24.9958574,lng:121.3086218,type:'toothbrush',isPure:true,note:'06/25 已確認是純點',icon:'🪥',color:C.pure},
+  {id:1520,name:'服飾店',lat:24.9969581,lng:121.3079675,type:'clothing',isPure:true,note:'06/25 已確認是純點',icon:'👕',color:C.pure},
+  {id:1521,name:'超市',lat:24.9833444,lng:121.2863587,type:'supermarket',isPure:true,note:'06/25 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1522,name:'超市',lat:24.9803669,lng:121.2762262,type:'supermarket',isPure:true,note:'06/25 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1523,name:'牙刷',lat:24.9752365,lng:121.2620221,type:'toothbrush',isPure:true,note:'06/25 已確認是純點',icon:'🪥',color:C.pure},
+  {id:1524,name:'超市',lat:24.975408,lng:121.2489079,type:'supermarket',isPure:true,note:'06/25 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1525,name:'牙刷',lat:24.9714279,lng:121.2470257,type:'toothbrush',isPure:true,note:'06/25 已確認是純點',icon:'🪥',color:C.pure},
+  {id:1526,name:'服飾店',lat:24.974145,lng:121.2444239,type:'clothing',isPure:true,note:'06/25 已確認是純點',icon:'👕',color:C.pure},
+  {id:1527,name:'服飾店',lat:24.9606421,lng:121.2592475,type:'clothing',isPure:true,note:'06/25 已確認是純點',icon:'👕',color:C.pure},
+  {id:1528,name:'超市',lat:24.9517736,lng:121.2607039,type:'supermarket',isPure:true,note:'06/25 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1529,name:'牙刷',lat:24.9271045,lng:121.2414281,type:'toothbrush',isPure:true,note:'06/26 已確認是純點',icon:'🪥',color:C.pure},
+  {id:1530,name:'服飾店',lat:24.8643445,lng:121.220075,type:'clothing',isPure:true,note:'06/26 已確認是純點',icon:'👕',color:C.pure},
+  {id:1531,name:'超市',lat:24.8619815,lng:121.2163159,type:'supermarket',isPure:true,note:'06/26 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1532,name:'牙刷',lat:24.843158,lng:121.2340806,type:'toothbrush',isPure:true,note:'06/26 已確認是純點',icon:'🪥',color:C.pure},
+  {id:1533,name:'超市',lat:24.9154807,lng:121.1821979,type:'supermarket',isPure:true,note:'06/26 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1534,name:'服飾店',lat:24.911183,lng:121.1762451,type:'clothing',isPure:true,note:'06/26 已確認是純點',icon:'👕',color:C.pure},
+  {id:1535,name:'超市',lat:24.9117682,lng:121.168482,type:'supermarket',isPure:true,note:'06/26 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1536,name:'便利商店',lat:24.9113424,lng:121.1619969,type:'convenience',isPure:true,note:'06/26 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1537,name:'便利商店',lat:24.9014201,lng:121.1457032,type:'convenience',isPure:true,note:'06/26 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1538,name:'超市',lat:24.9205021,lng:121.2143609,type:'supermarket',isPure:true,note:'06/26 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1539,name:'便利商店',lat:24.9088881,lng:121.2076637,type:'convenience',isPure:true,note:'06/26 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1540,name:'服飾店',lat:24.9103418,lng:121.2058131,type:'clothing',isPure:true,note:'06/26 已確認是純點',icon:'👕',color:C.pure},
+  {id:1541,name:'便利商店',lat:24.8961484,lng:121.2092183,type:'convenience',isPure:true,note:'06/26 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1542,name:'便利商店',lat:24.8925141,lng:121.2042614,type:'convenience',isPure:true,note:'06/26 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1543,name:'便利商店',lat:24.8865657,lng:121.2122638,type:'convenience',isPure:true,note:'06/26 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1544,name:'超市',lat:24.8786946,lng:121.2095259,type:'supermarket',isPure:true,note:'06/26 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1545,name:'超市',lat:24.8741562,lng:121.2301918,type:'supermarket',isPure:true,note:'06/26 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1546,name:'服飾店',lat:24.9099871,lng:121.2855122,type:'clothing',isPure:true,note:'06/26 已確認是純點',icon:'👕',color:C.pure},
+  {id:1547,name:'超市',lat:24.9230973,lng:121.293015,type:'supermarket',isPure:true,note:'06/26 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1548,name:'服飾店',lat:24.9304192,lng:121.2957175,type:'clothing',isPure:true,note:'06/26 已確認是純點',icon:'👕',color:C.pure},
+  {id:1549,name:'牙刷',lat:24.9311226,lng:121.2987452,type:'toothbrush',isPure:true,note:'06/26 已確認是純點',icon:'🪥',color:C.pure},
+  {id:1550,name:'超市',lat:24.9394039,lng:121.3002277,type:'supermarket',isPure:true,note:'06/26 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1551,name:'服飾店',lat:24.9485582,lng:121.2952934,type:'clothing',isPure:true,note:'06/26 已確認是純點',icon:'👕',color:C.pure},
+  {id:1552,name:'服飾店',lat:24.9474308,lng:121.2993314,type:'clothing',isPure:true,note:'06/26 已確認是純點',icon:'👕',color:C.pure},
+  {id:1553,name:'服飾店',lat:24.9696715,lng:121.3049754,type:'clothing',isPure:true,note:'06/26 已確認是純點',icon:'👕',color:C.pure},
+  {id:1554,name:'超市',lat:24.9670734,lng:121.3033896,type:'supermarket',isPure:true,note:'06/26 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1555,name:'牙刷',lat:24.9621738,lng:121.3021098,type:'toothbrush',isPure:true,note:'06/26 已確認是純點',icon:'🪥',color:C.pure},
+  {id:1556,name:'便利商店',lat:24.9590292,lng:121.2116958,type:'convenience',isPure:true,note:'06/26 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1557,name:'牙刷',lat:24.9532379,lng:121.2112648,type:'toothbrush',isPure:true,note:'06/26 已確認是純點',icon:'🪥',color:C.pure},
+  {id:1558,name:'超市',lat:24.9438001,lng:121.2135937,type:'supermarket',isPure:true,note:'06/26 已確認是純點',icon:'🛒',color:C.pure},
+  {id:1559,name:'便利商店',lat:24.8760152,lng:121.2889916,type:'convenience',isPure:true,note:'06/26 已確認是純點',icon:'🏪',color:C.pure},
+  {id:1560,name:'工具',lat:24.9562679,lng:121.2472626,type:'tool',isPure:false,note:'非純點・工具+拉麵',detail:'非純點・工具+拉麵',icon:'🔧',color:C.blue},
+  {id:1561,name:'洗衣店',lat:24.9429187,lng:121.2260497,type:'laundry',isPure:true,note:'06/23 已確認是純點',icon:'🧺',color:C.pure},
+  {id:1562,name:'工具',lat:24.9543829,lng:121.2452294,type:'tool',isPure:false,note:'06/23 非純點・工具+大學',detail:'非純點・工具+大學',icon:'🔧',color:C.blue},
+  {id:1563,name:'工具',lat:24.9471337,lng:121.2464771,type:'tool',isPure:true,note:'06/23 已確認是純點',icon:'🔧',color:C.pure},
+  {id:1564,name:'電池/仙女燈',lat:24.932985,lng:121.257126,type:'battery',isPure:true,note:'06/23 已確認是純點',icon:'🔋',color:C.pure},
+  {id:1565,name:'工具',lat:25.019021,lng:121.212562,type:'tool',isPure:false,note:'06/23 非純點・工具+牙刷+化妝品',detail:'非純點・工具+牙刷+化妝品',icon:'🔧',color:C.blue},
+  {id:1566,name:'工具',lat:25.0164455,lng:121.2206834,type:'tool',isPure:false,note:'06/23 非純點・工具+幸運草',detail:'非純點・工具+幸運草',icon:'🔧',color:C.blue},
+  {id:1567,name:'韓國泡菜',lat:24.9886341,lng:121.0319475,type:'kimchi',isPure:false,note:'非純點・韓國泡菜+公車+便利店',detail:'非純點・韓國泡菜+公車+便利店',icon:'🥘',color:C.blue},
+  {id:1568,name:'電池/仙女燈',lat:25.0438493,lng:121.1387242,type:'battery',isPure:false,note:'06/23 非純點・電池+超商',detail:'非純點・電池+超商',icon:'🔋',color:C.blue,addr:'五金賣場前'},
+  {id:1569,name:'韓國泡菜',lat:25.0542331,lng:121.2971415,type:'kimchi',isPure:false,note:'06/24 非純點・韓國泡菜+便利商店+餐廳',detail:'非純點・韓國泡菜+便利商店+餐廳',icon:'🥘',color:C.blue},
+  {id:1570,name:'法國麵包',lat:24.9568986,lng:121.2361184,type:'baguette',isPure:true,note:'06/23 已確認是純點',icon:'🥖',color:C.brown},
+  {id:1571,name:'韓國泡菜',lat:25.054283,lng:121.2959385,type:'kimchi',isPure:false,note:'06/24 非純點・韓國泡菜+迷你書+餐廳',detail:'非純點・韓國泡菜+迷你書+餐廳',icon:'🥘',color:C.blue},
+  {id:1572,name:'法國麵包',lat:25.0548541,lng:121.2984242,type:'baguette',isPure:false,note:'06/24 非純點・法國麵包+水邊',detail:'非純點・法國麵包+水邊',icon:'🥖',color:C.blue},
+  {id:1573,name:'韓國泡菜',lat:25.0149457,lng:121.313113,type:'kimchi',isPure:true,note:'06/26 已確認是純點',icon:'🥘',color:C.pink},
+  {id:1574,name:'洗衣店',lat:24.9795504,lng:121.255303,type:'laundry',isPure:true,note:'06/25 已確認是純點',icon:'🧺',color:C.pure,addr:'純點範圍很小'},
+  {id:1575,name:'電池/仙女燈',lat:24.9784565,lng:121.3258737,type:'battery',isPure:true,note:'06/25 已確認是純點',icon:'🔋',color:C.pure},
+  {id:1576,name:'洗衣店',lat:25.0112114,lng:121.3075097,type:'laundry',isPure:true,note:'06/26 已確認是純點',icon:'🧺',color:C.pure},
+  {id:1577,name:'五金行',lat:25.0214531,lng:121.3006186,type:'tool',isPure:true,note:'06/25 已確認是純點',icon:'🔧',color:C.pure},
+  {id:1578,name:'五金行',lat:25.019664,lng:121.257625,type:'tool',isPure:true,note:'06/26 已確認是純點',icon:'🔧',color:C.pure},
+  {id:1579,name:'法國麵包',lat:25.008875,lng:121.305876,type:'baguette',isPure:true,note:'06/25 已確認是純點',icon:'🥖',color:C.brown},
+  {id:1580,name:'工具',lat:25.0213573,lng:121.3014491,type:'tool',isPure:true,note:'06/25 已確認是純點',icon:'🔧',color:C.pure},
+  {id:1581,name:'韓國泡菜',lat:25.0173259,lng:121.2939087,type:'kimchi',isPure:false,note:'非純點・韓國泡菜+餐廳+幸運草+便利店',detail:'非純點・韓國泡菜+餐廳+幸運草+便利店',icon:'🥘',color:C.blue},
+  {id:1582,name:'工具',lat:25.0229896,lng:121.2915747,type:'tool',isPure:true,note:'06/25 已確認是純點',icon:'🔧',color:C.pure},
+  {id:1583,name:'洗衣店',lat:25.0037922,lng:121.3001687,type:'laundry',isPure:true,note:'06/25 已確認是純點',icon:'🧺',color:C.pure},
+  {id:1584,name:'法國麵包',lat:24.9990164,lng:121.3053994,type:'baguette',isPure:true,note:'06/25 已確認是純點',icon:'🥖',color:C.brown},
+  {id:1585,name:'洗衣店',lat:24.9934926,lng:121.2916529,type:'laundry',isPure:true,note:'06/25 已確認是純點',icon:'🧺',color:C.pure,addr:'桃園區延壽街122號'},
+  {id:1586,name:'韓國泡菜',lat:24.9928835,lng:121.2985296,type:'kimchi',isPure:false,note:'非純點・韓國泡菜+牙刷+化妝品+餐廳',detail:'非純點・韓國泡菜+牙刷+化妝品+餐廳',icon:'🥘',color:C.blue},
+  {id:1587,name:'電池/仙女燈',lat:24.9977451,lng:121.2932872,type:'battery',isPure:false,note:'非純點・電池+便利店+幸運草',detail:'非純點・電池+便利店+幸運草',icon:'🔋',color:C.blue},
+  {id:1588,name:'洗衣店',lat:24.9985182,lng:121.3100454,type:'laundry',isPure:false,note:'06/25 非純點・洗衣店+美容院',detail:'非純點・洗衣店+美容院',icon:'🧺',color:C.blue},
+  {id:1589,name:'電池/仙女燈',lat:24.980468,lng:121.3199468,type:'battery',isPure:false,note:'06/25 非純點・電池+便利店',detail:'非純點・電池+便利店',icon:'🔋',color:C.blue},
+  {id:1590,name:'洗衣店',lat:24.9790306,lng:121.3085161,type:'laundry',isPure:true,note:'06/25 已確認是純點',icon:'🧺',color:C.pure},
+  {id:1591,name:'韓國泡菜',lat:24.9924409,lng:121.2766981,type:'kimchi',isPure:false,note:'非純點・韓國泡菜+幸運草+公車+拉麵',detail:'非純點・韓國泡菜+幸運草+公車+拉麵',icon:'🥘',color:C.blue},
+  {id:1592,name:'法國麵包',lat:24.977437,lng:121.2463201,type:'baguette',isPure:true,note:'06/25 已確認是純點',icon:'🥖',color:C.brown},
+  {id:1593,name:'法國麵包',lat:24.9698662,lng:121.2467067,type:'baguette',isPure:true,note:'06/25 已確認是純點',icon:'🥖',color:C.brown},
+  {id:1594,name:'韓國泡菜',lat:24.9519095,lng:121.2390577,type:'kimchi',isPure:false,note:'06/26 非純點・韓國泡菜+餐廳+公車+拉麵',detail:'非純點・韓國泡菜+餐廳+公車+拉麵',icon:'🥘',color:C.blue},
+  {id:1595,name:'電池/仙女燈',lat:24.9244356,lng:121.2480297,type:'battery',isPure:false,note:'06/26 非純點・電池+超市',detail:'非純點・電池+超市',icon:'🔋',color:C.blue},
+  {id:1596,name:'法國麵包',lat:24.9285254,lng:121.2233602,type:'baguette',isPure:true,note:'06/26 已確認是純點',icon:'🥖',color:C.brown},
+  {id:1597,name:'五金行',lat:24.8697856,lng:121.2188448,type:'tool',isPure:false,note:'06/26 非純點・五金行+拉麵',detail:'非純點・五金行+拉麵',icon:'🔧',color:C.blue,addr:'裡面還是二之一外面會掃到幸運草或公車'},
+  {id:1598,name:'法國麵包',lat:24.8695091,lng:121.215865,type:'baguette',isPure:true,note:'06/26 已確認是純點',icon:'🥖',color:C.brown},
+  {id:1599,name:'工具',lat:24.866579,lng:121.211625,type:'tool',isPure:true,note:'06/26 已確認是純點・範圍小需重開遊戲',icon:'🔧',color:C.pure},
+  {id:1600,name:'電池/仙女燈',lat:24.8697595,lng:121.214995,type:'battery',isPure:true,note:'06/26 已確認是純點',icon:'🔋',color:C.pure},
+  {id:1601,name:'韓國泡菜',lat:24.8494875,lng:121.2296919,type:'kimchi',isPure:false,note:'非純點・飛機+韓國泡菜+便利店+拉麵+郵局',detail:'非純點・飛機+韓國泡菜+便利店+拉麵+郵局',icon:'🥘',color:C.blue},
+  {id:1602,name:'韓國泡菜',lat:24.9139101,lng:121.1812469,type:'kimchi',isPure:false,note:'06/26 非純點・餐廳+韓國泡菜+咖啡杯+拉麵',detail:'非純點・餐廳+韓國泡菜+咖啡杯+拉麵',icon:'🥘',color:C.blue},
+  {id:1603,name:'工具',lat:24.91075,lng:121.176311,type:'tool',isPure:false,note:'06/26 非純點・工具+餐廳',detail:'非純點・工具+餐廳',icon:'🔧',color:C.blue},
+  {id:1604,name:'電池/仙女燈',lat:24.871827,lng:121.230649,type:'battery',isPure:true,note:'06/26 已確認是純點',icon:'🔋',color:C.pure},
+  {id:1605,name:'法國麵包',lat:24.8821563,lng:121.2675901,type:'baguette',isPure:true,note:'06/26 已確認是純點',icon:'🥖',color:C.brown},
+  {id:1606,name:'電池/仙女燈',lat:24.9286712,lng:121.2882669,type:'battery',isPure:true,note:'06/26 已確認是純點',icon:'🔋',color:C.pure},
+  {id:1607,name:'法國麵包',lat:24.9823753,lng:121.3137788,type:'baguette',isPure:true,note:'06/25 已確認是純點',icon:'🥖',color:C.brown},
+  {id:1608,name:'洗衣店',lat:24.9222349,lng:121.2921217,type:'laundry',isPure:true,note:'06/26 已確認是純點',icon:'🧺',color:C.pure},
+  {id:1609,name:'工具',lat:24.935774,lng:121.2891638,type:'tool',isPure:true,note:'06/26 已確認是純點',icon:'🔧',color:C.pure},
+  {id:1610,name:'洗衣店',lat:24.937832,lng:121.296608,type:'laundry',isPure:true,note:'06/26 已確認是純點',icon:'🧺',color:C.pure},
+  {id:1611,name:'韓國泡菜',lat:24.8819862,lng:121.2947687,type:'kimchi',isPure:true,note:'06/26 已確認是純點',icon:'🥘',color:C.pink},
+  {id:1612,name:'電池/仙女燈',lat:24.8648598,lng:121.2940609,type:'battery',isPure:true,note:'06/26 已確認是純點',icon:'🔋',color:C.pure},
+  {id:1613,name:'洗衣店',lat:24.8808361,lng:121.2907968,type:'laundry',isPure:true,note:'06/26 已確認是純點',icon:'🧺',color:C.pure},
+  {id:1614,name:'韓國泡菜',lat:24.8817343,lng:121.2906104,type:'kimchi',isPure:false,note:'06/26 非純點・韓國泡菜+洗衣店',detail:'非純點・韓國泡菜+洗衣店',icon:'🥘',color:C.blue},
+  {id:1615,name:'工具',lat:24.8780821,lng:121.2908381,type:'tool',isPure:true,note:'06/26 已確認是純點',icon:'🔧',color:C.pure},
+  {id:1616,name:'電池/仙女燈',lat:24.8772458,lng:121.2885055,type:'battery',isPure:true,note:'06/26 已確認是純點',icon:'🔋',color:C.pure},
+  {id:1617,name:'法國麵包',lat:24.8406891,lng:121.2331874,type:'baguette',isPure:true,note:'06/26 已確認是純點',icon:'🥖',color:C.brown},
+  {id:1618,name:'水邊',lat:24.947468,lng:121.2154971,type:'water',isPure:true,note:'06/23 已確認是純點',icon:'💧',color:C.blue},
+  {id:1619,name:'水邊',lat:24.9431281,lng:121.2249286,type:'water',isPure:true,note:'06/23 已確認是純點',icon:'💧',color:C.blue},
+  {id:1620,name:'橋樑',lat:24.9458916,lng:121.2172871,type:'bridge',isPure:true,note:'06/23 已確認是純點',icon:'🌉',color:C.purple},
+  {id:1621,name:'水邊',lat:24.9678037,lng:121.2290398,type:'water',isPure:true,note:'06/23 已確認是純點',icon:'💧',color:C.blue},
+  {id:1622,name:'水邊',lat:24.9746008,lng:121.2344407,type:'water',isPure:true,note:'06/23 已確認是純點',icon:'💧',color:C.blue},
+  {id:1623,name:'水邊',lat:24.9616912,lng:121.2396957,type:'water',isPure:true,note:'06/23 已確認是純點',icon:'💧',color:C.blue},
+  {id:1624,name:'水邊',lat:24.9476132,lng:121.2483118,type:'water',isPure:true,note:'06/23 已確認是純點',icon:'💧',color:C.blue},
+  {id:1625,name:'水邊',lat:24.939222,lng:121.2419369,type:'water',isPure:true,note:'06/23 已確認是純點',icon:'💧',color:C.blue},
+  {id:1626,name:'橋樑',lat:24.9360627,lng:121.2476322,type:'bridge',isPure:true,note:'06/23 已確認是純點',icon:'🌉',color:C.purple},
+  {id:1627,name:'水邊',lat:24.9936334,lng:121.1799203,type:'water',isPure:true,note:'06/23 已確認是純點',icon:'💧',color:C.blue},
+  {id:1628,name:'水邊',lat:24.9814849,lng:121.191561,type:'water',isPure:true,note:'06/23 已確認是純點',icon:'💧',color:C.blue},
+  {id:1629,name:'水邊',lat:24.9596941,lng:121.1700595,type:'water',isPure:true,note:'06/23 已確認是純點',icon:'💧',color:C.blue},
+  {id:1630,name:'水邊',lat:24.9519734,lng:121.1900377,type:'water',isPure:true,note:'06/23 已確認是純點',icon:'💧',color:C.blue},
+  {id:1631,name:'水邊',lat:25.0276365,lng:121.2945742,type:'water',isPure:true,note:'06/23 已確認是純點',icon:'💧',color:C.blue},
+  {id:1632,name:'橋樑',lat:25.0191097,lng:121.2191558,type:'bridge',isPure:true,note:'06/23 已確認是純點',icon:'🌉',color:C.purple},
+  {id:1633,name:'橋樑',lat:24.9601,lng:121.159071,type:'bridge',isPure:true,note:'06/23 已確認是純點',icon:'🌉',color:C.purple},
+  {id:1634,name:'水邊',lat:24.9860566,lng:121.0321826,type:'water',isPure:true,note:'06/24 已確認是純點',icon:'💧',color:C.blue},
+  {id:1635,name:'水邊',lat:25.0284182,lng:121.0727816,type:'water',isPure:true,note:'06/24 已確認是純點',icon:'💧',color:C.blue},
+  {id:1636,name:'水邊',lat:25.0375969,lng:121.1380265,type:'water',isPure:true,note:'06/24 已確認是純點',icon:'💧',color:C.blue},
+  {id:1637,name:'橋樑',lat:25.0232044,lng:121.1162371,type:'bridge',isPure:true,note:'06/24 已確認是純點',icon:'🌉',color:C.purple},
+  {id:1638,name:'水邊',lat:25.0595731,lng:121.1694559,type:'water',isPure:true,note:'06/24 已確認是純點',icon:'💧',color:C.blue},
+  {id:1639,name:'橋樑',lat:25.0576716,lng:121.2094182,type:'bridge',isPure:true,note:'06/24 已確認是純點',icon:'🌉',color:C.purple},
+  {id:1640,name:'水邊',lat:25.0812738,lng:121.2565445,type:'water',isPure:true,note:'06/24 已確認是純點',icon:'💧',color:C.blue},
+  {id:1641,name:'橋樑',lat:25.0379626,lng:121.2309504,type:'bridge',isPure:true,note:'06/24 已確認是純點',icon:'🌉',color:C.purple},
+  {id:1642,name:'水邊',lat:25.0861657,lng:121.2845081,type:'water',isPure:true,note:'06/24 已確認是純點',icon:'💧',color:C.blue},
+  {id:1643,name:'水邊',lat:25.0732366,lng:121.2874788,type:'water',isPure:true,note:'06/24 已確認是純點',icon:'💧',color:C.blue},
+  {id:1644,name:'水邊',lat:25.0114325,lng:121.3030168,type:'water',isPure:true,note:'06/25 已確認是純點',icon:'💧',color:C.blue},
+  {id:1645,name:'水邊',lat:25.0217461,lng:121.3017691,type:'water',isPure:true,note:'06/25 已確認是純點',icon:'💧',color:C.blue},
+  {id:1646,name:'水邊',lat:24.9945431,lng:121.3143228,type:'water',isPure:true,note:'06/25 已確認是純點',icon:'💧',color:C.blue},
+  {id:1647,name:'水邊',lat:24.9896331,lng:121.2969198,type:'water',isPure:true,note:'06/25 已確認是純點',icon:'💧',color:C.blue},
+  {id:1648,name:'橋樑',lat:24.9916417,lng:121.2816445,type:'bridge',isPure:true,note:'06/25 已確認是純點',icon:'🌉',color:C.purple},
+  {id:1649,name:'橋樑',lat:24.9546346,lng:121.2652594,type:'bridge',isPure:true,note:'06/25 已確認是純點',icon:'🌉',color:C.purple},
+  {id:1650,name:'橋樑',lat:24.9194509,lng:121.2518017,type:'bridge',isPure:true,note:'06/26 已確認是純點',icon:'🌉',color:C.purple},
+  {id:1651,name:'水邊',lat:24.9260961,lng:121.2242491,type:'water',isPure:true,note:'06/26 已確認是純點',icon:'💧',color:C.blue},
+  {id:1652,name:'橋樑',lat:24.9124409,lng:121.1740492,type:'bridge',isPure:true,note:'06/26 已確認是純點',icon:'🌉',color:C.purple},
+  {id:1653,name:'水邊',lat:24.9178423,lng:121.2077688,type:'water',isPure:true,note:'06/26 已確認是純點',icon:'💧',color:C.blue},
+  {id:1654,name:'水邊',lat:24.873335,lng:121.2137873,type:'water',isPure:true,note:'06/26 已確認是純點',icon:'💧',color:C.blue},
+  {id:1655,name:'水邊',lat:24.9680343,lng:121.3068632,type:'water',isPure:true,note:'06/26 已確認是純點',icon:'💧',color:C.blue},
+  {id:1656,name:'水邊',lat:25.0238232,lng:121.2539667,type:'water',isPure:true,note:'06/26 已確認是純點',icon:'💧',color:C.blue},
+  {id:1657,name:'水邊',lat:24.8769816,lng:121.2948194,type:'water',isPure:true,note:'06/26 已確認是純點',icon:'💧',color:C.blue},
+  {id:1658,name:'牙刷',lat:24.872062,lng:121.2343975,type:'toothbrush',isPure:true,note:'06/26 已確認是純點',icon:'🪥',color:C.pure},
+  {id:1659,name:'公車',lat:24.9466023,lng:121.227491,type:'bus',isPure:true,note:'06/23 已確認是純點',icon:'🚌',color:'#FF9800'},
+  {id:1660,name:'公車',lat:24.9510191,lng:121.2198561,type:'bus',isPure:true,note:'06/23 已確認是純點',icon:'🚌',color:'#FF9800'},
+  {id:1661,name:'電車',lat:24.9648305,lng:121.2219761,type:'tram',isPure:true,note:'06/23 已確認是純點',icon:'🚃',color:'#00695C'},
+  {id:1662,name:'公車',lat:24.9585891,lng:121.176175,type:'bus',isPure:true,note:'06/23 已確認是純點',icon:'🚌',color:'#FF9800'},
+  {id:1663,name:'公車',lat:24.9633829,lng:121.1557078,type:'bus',isPure:true,note:'06/23 已確認是純點',icon:'🚌',color:'#FF9800'},
+  {id:1664,name:'公車',lat:24.962095,lng:121.1440915,type:'bus',isPure:true,note:'06/23 已確認是純點',icon:'🚌',color:'#FF9800'},
+  {id:1665,name:'公車',lat:24.9745495,lng:121.093469,type:'bus',isPure:true,note:'06/24 已確認是純點',icon:'🚌',color:'#FF9800'},
+  {id:1666,name:'公車',lat:24.9712317,lng:121.1089639,type:'bus',isPure:true,note:'06/24 已確認是純點',icon:'🚌',color:'#FF9800'},
+  {id:1667,name:'公車',lat:25.03444,lng:121.074851,type:'bus',isPure:true,note:'06/24 已確認是純點',icon:'🚌',color:'#FF9800'},
+  {id:1668,name:'飯店',lat:25.0391776,lng:121.1425725,type:'hotel',isPure:true,note:'06/24 已確認是純點',icon:'🛏️',color:'#AB47BC'},
+  {id:1669,name:'公車',lat:25.0378891,lng:121.1282946,type:'bus',isPure:true,note:'06/24 已確認是純點',icon:'🚌',color:'#FF9800'},
+  {id:1670,name:'公車',lat:25.058334,lng:121.166064,type:'bus',isPure:true,note:'06/24 已確認是純點',icon:'🚌',color:'#FF9800'},
+  {id:1671,name:'飯店',lat:25.0610303,lng:121.1769438,type:'hotel',isPure:true,note:'06/24 已確認是純點',icon:'🛏️',color:'#AB47BC'},
+  {id:1672,name:'電車',lat:25.0533476,lng:121.2093466,type:'tram',isPure:true,note:'06/24 已確認是純點',icon:'🚃',color:'#00695C'},
+  {id:1673,name:'飛機',lat:25.0885983,lng:121.2491823,type:'plane',isPure:true,note:'06/24 已確認是純點',icon:'✈️',color:'#607D8B'},
+  {id:1674,name:'飛機',lat:25.0893729,lng:121.2461943,type:'plane',isPure:true,note:'06/24 已確認是純點',icon:'✈️',color:'#607D8B'},
+  {id:1675,name:'機場',lat:25.0871707,lng:121.2436911,type:'plane',isPure:true,note:'06/24 已確認是純點',icon:'✈️',color:'#607D8B'},
+  {id:1676,name:'機場',lat:25.0859254,lng:121.2457093,type:'plane',isPure:true,note:'06/24 已確認是純點',icon:'✈️',color:'#607D8B'},
+  {id:1677,name:'飛機',lat:25.0833176,lng:121.2399686,type:'plane',isPure:true,note:'06/24 已確認是純點',icon:'✈️',color:'#607D8B'},
+  {id:1678,name:'飛機',lat:25.0745329,lng:121.2315368,type:'plane',isPure:true,note:'06/24 已確認是純點',icon:'✈️',color:'#607D8B'},
+  {id:1679,name:'飛機',lat:25.0717838,lng:121.2253132,type:'plane',isPure:true,note:'06/24 已確認是純點',icon:'✈️',color:'#607D8B'},
+  {id:1680,name:'飛機',lat:25.0731365,lng:121.2241631,type:'plane',isPure:true,note:'06/24 已確認是純點',icon:'✈️',color:'#607D8B'},
+  {id:1681,name:'飛機',lat:25.074346,lng:121.2284887,type:'plane',isPure:true,note:'06/24 已確認是純點',icon:'✈️',color:'#607D8B'},
+  {id:1682,name:'機場',lat:25.0623549,lng:121.2308743,type:'plane',isPure:true,note:'06/24 已確認是純點',icon:'✈️',color:'#607D8B'},
+  {id:1683,name:'飛機',lat:25.0743553,lng:121.245993,type:'plane',isPure:true,note:'06/24 已確認是純點',icon:'✈️',color:'#607D8B'},
+  {id:1684,name:'飛機',lat:25.0487983,lng:121.2302936,type:'plane',isPure:true,note:'06/24 已確認是純點',icon:'✈️',color:'#607D8B'},
+  {id:1685,name:'飛機',lat:25.0960004,lng:121.2354455,type:'plane',isPure:true,note:'06/24 已確認是純點',icon:'✈️',color:'#607D8B'},
+  {id:1686,name:'飛機',lat:25.0930901,lng:121.2325909,type:'plane',isPure:true,note:'06/24 已確認是純點',icon:'✈️',color:'#607D8B'},
+  {id:1687,name:'飛機',lat:25.1021781,lng:121.2446164,type:'plane',isPure:true,note:'06/24 已確認是純點',icon:'✈️',color:'#607D8B'},
+  {id:1688,name:'電車',lat:25.0790662,lng:121.2832103,type:'tram',isPure:true,note:'06/24 已確認是純點',icon:'🚃',color:'#00695C'},
+  {id:1689,name:'飯店',lat:25.0615576,lng:121.2930645,type:'hotel',isPure:true,note:'06/24 已確認是純點',icon:'🛏️',color:'#AB47BC'},
+  {id:1690,name:'飛機',lat:24.84788888888889,lng:121.23197222222223,type:'plane',isPure:true,note:'06/26 已確認是純點',icon:'✈️',color:'#607D8B'},
+  {id:1691,name:'飯店',lat:24.9734343,lng:121.3198717,type:'hotel',isPure:true,note:'06/25 已確認是純點',icon:'🛏️',color:'#AB47BC'},
+  {id:1692,name:'電車',lat:24.970325,lng:121.2588781,type:'tram',isPure:true,note:'06/25 已確認是純點',icon:'🚃',color:'#00695C'},
+  {id:1693,name:'飛機',lat:24.8472261,lng:121.2311614,type:'plane',isPure:true,note:'06/26 已確認是純點',icon:'✈️',color:'#607D8B'},
+  {id:1694,name:'飯店',lat:24.9342185,lng:121.2815393,type:'hotel',isPure:true,note:'06/26 已確認是純點',icon:'🛏️',color:'#AB47BC'},
+  {id:1695,name:'拉麵',lat:24.9489213,lng:121.2270089,type:'ramen',isPure:true,note:'06/23 已確認是純點',icon:'🍜',color:'#F57F17'},
+  {id:1696,name:'餐廳',lat:24.9491827,lng:121.2211157,type:'chef',isPure:true,note:'06/23 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1697,name:'餐廳',lat:24.9486853,lng:121.2166075,type:'chef',isPure:true,note:'06/23 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1698,name:'餐廳',lat:24.9639791,lng:121.222435,type:'chef',isPure:true,note:'06/23 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1699,name:'義式餐廳',lat:24.945991,lng:121.2442565,type:'italian',isPure:false,note:'06/23 非純點・超市+義式餐廳',detail:'非純點・超市+義式餐廳',icon:'🍕',color:C.blue},
+  {id:1700,name:'咖哩',lat:24.8510553,lng:121.2268099,type:'curry',isPure:false,note:'非純點・咖哩+幸運草',detail:'非純點・咖哩+幸運草',icon:'🍛',color:C.blue},
+  {id:1701,name:'拉麵',lat:24.9295696,lng:121.2504435,type:'ramen',isPure:true,note:'06/23 已確認是純點',icon:'🍜',color:'#F57F17'},
+  {id:1702,name:'餐廳',lat:24.9257411,lng:121.2509557,type:'chef',isPure:true,note:'06/23 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1703,name:'餐廳',lat:24.994693,lng:121.2916823,type:'chef',isPure:true,note:'06/25 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1704,name:'咖哩',lat:24.9954462,lng:121.3046001,type:'curry',isPure:false,note:'06/25 非純點・咖哩+幸運草',detail:'非純點・咖哩+幸運草',icon:'🍛',color:C.blue},
+  {id:1705,name:'義式餐廳',lat:24.9309301,lng:121.2554714,type:'italian',isPure:false,note:'06/23 非純點・義式餐廳+餐廳',detail:'非純點・義式餐廳+餐廳',icon:'🍕',color:C.blue},
+  {id:1706,name:'咖哩',lat:24.9756866,lng:121.2483088,type:'curry',isPure:false,note:'06/25 非純點・餐廳+咖啡杯+超市+義式餐廳+咖哩',detail:'非純點・餐廳+咖啡杯+超市+義式餐廳+咖哩',icon:'🍛',color:C.blue},
+  {id:1707,name:'咖哩',lat:25.0211106,lng:121.3004892,type:'curry',isPure:false,note:'06/25 非純點・咖哩+拉麵+工具',detail:'非純點・咖哩+拉麵+工具',icon:'🍛',color:C.blue},
+  {id:1708,name:'義式餐廳',lat:25.008823,lng:121.1427274,type:'italian',isPure:true,note:'06/22 已確認是純點',icon:'🍕',color:'#E53935'},
+  {id:1709,name:'餐廳',lat:24.9930552,lng:121.2782528,type:'chef',isPure:true,note:'06/25 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1710,name:'餐廳',lat:24.981374,lng:121.211048,type:'chef',isPure:true,note:'06/22 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1711,name:'餐廳',lat:24.963128,lng:121.1905412,type:'chef',isPure:true,note:'06/23 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1712,name:'餐廳',lat:24.9995711,lng:121.2942112,type:'chef',isPure:true,note:'06/25 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1713,name:'餐廳',lat:24.9582859,lng:121.1972555,type:'chef',isPure:true,note:'06/23 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1714,name:'餐廳',lat:24.9289595,lng:121.2285708,type:'chef',isPure:true,note:'06/26 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1715,name:'餐廳',lat:24.9610074,lng:121.1685247,type:'chef',isPure:true,note:'06/23 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1716,name:'義式餐廳',lat:24.9513357,lng:121.1930684,type:'italian',isPure:true,note:'06/23 已確認是純點',icon:'🍕',color:'#E53935'},
+  {id:1717,name:'餐廳',lat:24.9621254,lng:121.1478313,type:'chef',isPure:true,note:'06/23 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1718,name:'咖哩',lat:25.0129063,lng:121.3151188,type:'curry',isPure:false,note:'06/24 非純點・餐廳+幸運草+便利店+超市+拉麵+咖哩',detail:'非純點・餐廳+幸運草+便利店+超市+拉麵+咖哩',icon:'🍛',color:C.blue},
+  {id:1719,name:'餐廳',lat:25.0281045,lng:121.2930988,type:'chef',isPure:true,note:'06/23 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1720,name:'義式餐廳',lat:25.0271691,lng:121.293207,type:'italian',isPure:false,note:'06/23 非純點・義式餐廳+拉麵',detail:'非純點・義式餐廳+拉麵',icon:'🍕',color:C.blue},
+  {id:1721,name:'拉麵',lat:25.027651,lng:121.29387,type:'ramen',isPure:true,note:'06/23 已確認是純點',icon:'🍜',color:'#F57F17'},
+  {id:1722,name:'義式餐廳',lat:25.0073488,lng:121.2124127,type:'italian',isPure:true,note:'06/23 已確認是純點',icon:'🍕',color:'#E53935'},
+  {id:1723,name:'餐廳',lat:25.0103057,lng:121.2073259,type:'chef',isPure:true,note:'06/23 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1724,name:'餐廳',lat:25.0128768,lng:121.2037145,type:'chef',isPure:true,note:'06/23 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1725,name:'餐廳',lat:25.0236484,lng:121.2191183,type:'chef',isPure:true,note:'06/23 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1726,name:'餐廳',lat:24.9636675,lng:121.1582223,type:'chef',isPure:true,note:'06/23 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1727,name:'餐廳',lat:24.9637553,lng:121.1514855,type:'chef',isPure:true,note:'06/23 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1728,name:'餐廳',lat:24.9900115,lng:121.0322074,type:'chef',isPure:true,note:'06/24 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1729,name:'餐廳',lat:25.0252631,lng:121.112725,type:'chef',isPure:true,note:'06/24 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1730,name:'拉麵',lat:25.0149343,lng:121.1321344,type:'ramen',isPure:true,note:'06/24 已確認是純點',icon:'🍜',color:'#F57F17'},
+  {id:1731,name:'餐廳',lat:24.9899446,lng:121.1364575,type:'chef',isPure:true,note:'06/24 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1732,name:'餐廳',lat:25.0610453,lng:121.1930028,type:'chef',isPure:true,note:'06/24 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1733,name:'義式餐廳',lat:25.055238,lng:121.2093382,type:'italian',isPure:false,note:'06/24 非純點・義式餐廳+電車',detail:'非純點・義式餐廳+電車',icon:'🍕',color:C.blue},
+  {id:1734,name:'拉麵',lat:25.0792684,lng:121.2563953,type:'ramen',isPure:true,note:'06/25 已確認是純點',icon:'🍜',color:'#F57F17'},
+  {id:1735,name:'餐廳',lat:25.1013926,lng:121.238668,type:'chef',isPure:true,note:'06/24 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1736,name:'餐廳',lat:25.1040899,lng:121.2605514,type:'chef',isPure:true,note:'06/24 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1737,name:'拉麵',lat:25.0539111,lng:121.2821071,type:'ramen',isPure:true,note:'06/25 已確認是純點',icon:'🍜',color:'#F57F17'},
+  {id:1738,name:'餐廳',lat:25.0320799,lng:121.3035946,type:'chef',isPure:true,note:'06/24 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1739,name:'餐廳',lat:25.003086,lng:121.308033,type:'chef',isPure:true,note:'06/25 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1740,name:'餐廳',lat:25.0059014,lng:121.3053695,type:'chef',isPure:true,note:'06/25 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1741,name:'義式餐廳',lat:25.0196046,lng:121.3053228,type:'italian',isPure:false,note:'06/25 非純點・義式餐廳+幸運草',detail:'非純點・義式餐廳+幸運草',icon:'🍕',color:C.blue},
+  {id:1742,name:'拉麵',lat:25.0117472,lng:121.2945533,type:'ramen',isPure:true,note:'06/25 已確認是純點',icon:'🍜',color:'#F57F17'},
+  {id:1743,name:'義式餐廳',lat:25.0080549,lng:121.2965306,type:'italian',isPure:true,note:'06/25 已確認是純點',icon:'🍕',color:'#E53935'},
+  {id:1744,name:'餐廳',lat:25.021424,lng:121.2923687,type:'chef',isPure:true,note:'06/25 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1745,name:'義式餐廳',lat:25.0227683,lng:121.2895664,type:'italian',isPure:true,note:'06/25 已確認是純點',icon:'🍕',color:'#E53935'},
+  {id:1746,name:'餐廳',lat:24.9998639,lng:121.3062021,type:'chef',isPure:true,note:'06/25 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1747,name:'拉麵',lat:24.997134,lng:121.2989435,type:'ramen',isPure:true,note:'06/25 已確認是純點',icon:'🍜',color:'#F57F17'},
+  {id:1748,name:'餐廳',lat:24.9879942,lng:121.3029222,type:'chef',isPure:true,note:'06/25 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1749,name:'餐廳',lat:24.9882193,lng:121.2915596,type:'chef',isPure:true,note:'06/25 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1750,name:'拉麵',lat:24.9752896,lng:121.2591571,type:'ramen',isPure:true,note:'06/25 已確認是純點',icon:'🍜',color:'#F57F17'},
+  {id:1751,name:'餐廳',lat:24.9763358,lng:121.2524797,type:'chef',isPure:true,note:'06/25 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1752,name:'拉麵',lat:24.9800298,lng:121.2511432,type:'ramen',isPure:true,note:'06/25 已確認是純點',icon:'🍜',color:'#F57F17'},
+  {id:1753,name:'義式餐廳',lat:24.9610875,lng:121.2567731,type:'italian',isPure:true,note:'06/25 已確認是純點',icon:'🍕',color:'#E53935'},
+  {id:1754,name:'餐廳',lat:24.9300884,lng:121.2563967,type:'chef',isPure:true,note:'06/25 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1755,name:'拉麵',lat:24.9288625,lng:121.2565335,type:'ramen',isPure:true,note:'06/25 已確認是純點',icon:'🍜',color:'#F57F17'},
+  {id:1756,name:'拉麵',lat:24.929473,lng:121.2577241,type:'ramen',isPure:true,note:'06/25 已確認是純點',icon:'🍜',color:'#F57F17'},
+  {id:1757,name:'餐廳',lat:24.9358071,lng:121.2323096,type:'chef',isPure:true,note:'06/25 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1758,name:'拉麵',lat:24.9509344,lng:121.2385901,type:'ramen',isPure:true,note:'06/26 已確認是純點',icon:'🍜',color:'#F57F17'},
+  {id:1759,name:'餐廳',lat:24.9513238,lng:121.2392314,type:'chef',isPure:true,note:'06/26 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1760,name:'拉麵',lat:24.8704349,lng:121.2181287,type:'ramen',isPure:true,note:'06/26 已確認是純點',icon:'🍜',color:'#F57F17'},
+  {id:1761,name:'餐廳',lat:24.8637362,lng:121.2188697,type:'chef',isPure:true,note:'06/26 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1762,name:'義式餐廳',lat:24.8629552,lng:121.2155135,type:'italian',isPure:false,note:'06/26 非純點・義式餐廳+漢堡+超市',detail:'非純點・義式餐廳+漢堡+超市',icon:'🍕',color:C.blue},
+  {id:1763,name:'拉麵',lat:24.8596533,lng:121.2203161,type:'ramen',isPure:true,note:'06/26 已確認是純點',icon:'🍜',color:'#F57F17'},
+  {id:1764,name:'餐廳',lat:24.8379491,lng:121.2404822,type:'chef',isPure:true,note:'06/26 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1765,name:'義式餐廳',lat:24.8605672,lng:121.2051461,type:'italian',isPure:true,note:'06/26 已確認是純點',icon:'🍕',color:'#E53935'},
+  {id:1766,name:'餐廳',lat:24.913138,lng:121.1820512,type:'chef',isPure:true,note:'06/26 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1767,name:'餐廳',lat:24.9115636,lng:121.1608502,type:'chef',isPure:true,note:'06/26 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1768,name:'餐廳',lat:24.9117896,lng:121.1533772,type:'chef',isPure:true,note:'06/26 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1769,name:'拉麵',lat:24.9033527,lng:121.1539371,type:'ramen',isPure:true,note:'06/26 已確認是純點',icon:'🍜',color:'#F57F17'},
+  {id:1770,name:'餐廳',lat:24.9163434,lng:121.1467518,type:'chef',isPure:true,note:'06/26 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1771,name:'餐廳',lat:24.9361598,lng:121.1637223,type:'chef',isPure:true,note:'06/26 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1772,name:'餐廳',lat:24.9060865,lng:121.2127939,type:'chef',isPure:true,note:'06/26 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1773,name:'餐廳',lat:24.8977196,lng:121.2077169,type:'chef',isPure:true,note:'06/26 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1774,name:'拉麵',lat:24.9274759,lng:121.2834589,type:'ramen',isPure:true,note:'06/26 已確認是純點',icon:'🍜',color:'#F57F17'},
+  {id:1775,name:'義式餐廳',lat:24.9322916,lng:121.2871995,type:'italian',isPure:false,note:'06/26 非純點・咖啡杯+義式餐廳',detail:'非純點・咖啡杯+義式餐廳',icon:'🍕',color:C.blue},
+  {id:1776,name:'拉麵',lat:24.9513443,lng:121.2969052,type:'ramen',isPure:true,note:'06/26 已確認是純點',icon:'🍜',color:'#F57F17'},
+  {id:1777,name:'義式餐廳',lat:24.957237,lng:121.2975425,type:'italian',isPure:true,note:'06/26 已確認是純點',icon:'🍕',color:'#E53935'},
+  {id:1778,name:'餐廳',lat:24.9700365,lng:121.299617,type:'chef',isPure:true,note:'06/26 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1779,name:'義式餐廳',lat:24.9599718,lng:121.2120001,type:'italian',isPure:false,note:'06/26 非純點・義式餐廳+拉麵',detail:'非純點・義式餐廳+拉麵',icon:'🍕',color:C.blue},
+  {id:1780,name:'拉麵',lat:24.9590246,lng:121.2078708,type:'ramen',isPure:true,note:'06/26 已確認是純點',icon:'🍜',color:'#F57F17'},
+  {id:1781,name:'餐廳',lat:25.0174658,lng:121.2594659,type:'chef',isPure:true,note:'06/26 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1782,name:'餐廳',lat:24.874767,lng:121.2875751,type:'chef',isPure:true,note:'06/26 已確認是純點',icon:'🍽️',color:'#8D6E63'},
+  {id:1783,name:'幸運草',lat:24.9828173,lng:121.2521888,type:'clover',isPure:true,note:'06/25 已確認是純點',icon:'🍀',color:'#43A047'},
+  {id:1784,name:'文具',lat:24.9533935,lng:121.2460899,type:'stationery',isPure:false,note:'06/23 非純點・文具+迷你書',detail:'非純點・文具+迷你書',icon:'📐',color:C.blue},
+  {id:1785,name:'漢堡',lat:24.9612399,lng:121.1881161,type:'burger',isPure:false,note:'06/23 非純點・漢堡+餐廳',detail:'非純點・漢堡+餐廳',icon:'🍔',color:C.blue},
+  {id:1786,name:'文具',lat:25.0200099,lng:121.212436,type:'stationery',isPure:true,note:'06/23 已確認是純點',icon:'📐',color:C.pure},
+  {id:1787,name:'壽司',lat:25.0137982,lng:121.2201898,type:'sushi',isPure:true,note:'06/23 已確認是純點',icon:'🍣',color:C.teal},
+  {id:1788,name:'體育館',lat:24.9997343,lng:121.1991707,type:'gym',isPure:false,note:'06/23 非純點・體育館+幸運草',detail:'非純點・體育館+幸運草',icon:'🏟️',color:C.blue},
+  {id:1789,name:'文具',lat:25.0518077,lng:121.1203746,type:'stationery',isPure:true,note:'06/24 已確認是純點',icon:'📐',color:C.pure},
+  {id:1790,name:'文具',lat:25.0426098,lng:121.1422858,type:'stationery',isPure:false,note:'06/23 非純點・文具+迷你書',detail:'非純點・文具+迷你書',icon:'📐',color:C.blue},
+  {id:1791,name:'文具',lat:25.0625908,lng:121.1982574,type:'stationery',isPure:false,note:'06/24 非純點・文具+迷你書',detail:'非純點・文具+迷你書',icon:'📐',color:C.blue},
+  {id:1792,name:'漢堡',lat:25.0500314,lng:121.2882422,type:'burger',isPure:true,note:'06/24 已確認是純點',icon:'🍔',color:C.amber},
+  {id:1793,name:'甜點',lat:25.0149647,lng:121.3141906,type:'dessert',isPure:true,note:'06/24 已確認是純點',icon:'🍰',color:C.pure},
+  {id:1794,name:'美術館',lat:24.9528545,lng:121.2413821,type:'museum',isPure:false,note:'06/26 非純點・餐廳+咖啡杯+美容院+牙刷+化妝品+美術館',detail:'非純點・餐廳+咖啡杯+美容院+牙刷+化妝品+美術館',icon:'🖼️',color:C.blue},
+  {id:1795,name:'壽司',lat:24.9967197,lng:121.2873683,type:'sushi',isPure:true,note:'06/25 已確認是純點',icon:'🍣',color:C.teal},
+  {id:1796,name:'美術館',lat:24.9498328,lng:121.1623307,type:'museum',isPure:true,note:'06/26 已確認是純點',icon:'🖼️',color:C.pure},
+  {id:1797,name:'體育館',lat:24.8692119,lng:121.2338781,type:'gym',isPure:true,note:'06/26 已確認是純點',icon:'🏟️',color:C.pure},
+  {id:1798,name:'美術館',lat:25.0042641,lng:121.3052112,type:'museum',isPure:false,note:'06/26 非純點・餐廳+服飾店+牙刷+拉麵+化妝品+美術館',detail:'非純點・餐廳+服飾店+牙刷+拉麵+化妝品+美術館',icon:'🖼️',color:C.blue},
+  {id:1799,name:'文具',lat:24.999659,lng:121.302548,type:'stationery',isPure:true,note:'06/25 已確認是純點',icon:'📐',color:C.pure},
+  {id:1800,name:'文具',lat:24.9842396,lng:121.2908941,type:'stationery',isPure:true,note:'06/25 已確認是純點',icon:'📐',color:C.pure},
+  {id:1801,name:'文具',lat:24.9880897,lng:121.2993188,type:'stationery',isPure:true,note:'06/25 已確認是純點',icon:'📐',color:C.pure},
+  {id:1802,name:'漢堡',lat:25.0309844,lng:121.3055732,type:'burger',isPure:true,note:'06/24 已確認是純點',icon:'🍔',color:C.amber},
+  {id:1803,name:'甜點',lat:25.015267,lng:121.3152301,type:'dessert',isPure:true,note:'06/24 已確認是純點',icon:'🍰',color:C.pure},
+  {id:1804,name:'甜點',lat:25.0127497,lng:121.2978277,type:'dessert',isPure:false,note:'06/25 非純點・甜點+拉麵',detail:'非純點・甜點+拉麵',icon:'🍰',color:C.blue},
+  {id:1805,name:'體育館',lat:24.9930449,lng:121.3230351,type:'gym',isPure:true,note:'06/25 已確認是純點',icon:'🏟️',color:C.pure},
+  {id:1806,name:'體育館',lat:24.9926632,lng:121.3243748,type:'gym',isPure:true,note:'06/25 已確認是純點',icon:'🏟️',color:C.pure},
+  {id:1807,name:'文具',lat:24.9908664,lng:121.3195069,type:'stationery',isPure:true,note:'06/25 已確認是純點',icon:'📐',color:C.pure},
+  {id:1808,name:'美術館',lat:24.9906294,lng:121.3028615,type:'museum',isPure:false,note:'06/25 非純點・咖啡杯+便利店+牙刷+拉麵+化妝品+美術館',detail:'非純點・咖啡杯+便利店+牙刷+拉麵+化妝品+美術館',icon:'🖼️',color:C.blue},
+  {id:1809,name:'體育館',lat:24.9779834,lng:121.2562444,type:'gym',isPure:true,note:'06/25 已確認是純點',icon:'🏟️',color:C.pure,addr:'行政大樓體育館純點'},
+  {id:1810,name:'漢堡',lat:24.9661405,lng:121.2610506,type:'burger',isPure:false,note:'06/25 非純點・漢堡+迷你書+文具',detail:'非純點・漢堡+迷你書+文具',icon:'🍔',color:C.blue},
+  {id:1811,name:'文具',lat:24.9435936,lng:121.2584731,type:'stationery',isPure:true,note:'06/25 已確認是純點',icon:'📐',color:C.pure},
+  {id:1812,name:'甜點',lat:24.9300236,lng:121.2280844,type:'dessert',isPure:false,note:'06/26 非純點・甜點+拉麵',detail:'非純點・甜點+拉麵',icon:'🍰',color:C.blue},
+  {id:1813,name:'壽司',lat:24.8665072,lng:121.2177335,type:'sushi',isPure:false,note:'非純點・壽司+餐廳+郵局',detail:'非純點・壽司+餐廳+郵局',icon:'🍣',color:C.blue},
+  {id:1814,name:'漢堡',lat:24.8622275,lng:121.2152483,type:'burger',isPure:false,note:'06/26 非純點・漢堡+超市',detail:'非純點・漢堡+超市',icon:'🍔',color:C.blue},
+  {id:1815,name:'甜點',lat:24.8438359,lng:121.2478769,type:'dessert',isPure:false,note:'06/26 非純點・甜點+拉麵+餐廳',detail:'非純點・甜點+拉麵+餐廳',icon:'🍰',color:C.blue},
+  {id:1816,name:'文具',lat:24.9123445,lng:121.1580053,type:'stationery',isPure:false,note:'06/26 非純點・文具+迷你書',detail:'非純點・文具+迷你書',icon:'📐',color:C.blue},
+  {id:1817,name:'甜點',lat:24.910454,lng:121.155097,type:'dessert',isPure:false,note:'06/26 非純點・甜點+義式餐廳+咖啡杯',detail:'非純點・甜點+義式餐廳+咖啡杯',icon:'🍰',color:C.blue},
+  {id:1818,name:'漢堡',lat:24.900531,lng:121.211861,type:'burger',isPure:true,note:'06/26 已確認是純點',icon:'🍔',color:C.amber},
+  {id:1819,name:'美術館',lat:24.8822039,lng:121.2690908,type:'museum',isPure:false,note:'06/26 非純點・法國麵包+美術館',detail:'非純點・法國麵包+美術館',icon:'🖼️',color:C.blue},
+  {id:1820,name:'體育館',lat:24.8957479,lng:121.2733468,type:'gym',isPure:true,note:'06/26 已確認是純點',icon:'🏟️',color:C.pure},
+  {id:1821,name:'甜點',lat:24.8991221,lng:121.2771902,type:'dessert',isPure:false,note:'06/26 非純點・甜點+餐聽',detail:'非純點・甜點+餐聽',icon:'🍰',color:C.blue},
+  {id:1822,name:'體育館',lat:24.9034765,lng:121.2791344,type:'gym',isPure:true,note:'06/26 已確認是純點',icon:'🏟️',color:C.pure},
+  {id:1823,name:'體育館',lat:24.9131161,lng:121.2838237,type:'gym',isPure:true,note:'06/26 已確認是純點',icon:'🏟️',color:C.pure},
+  {id:1824,name:'文具',lat:24.927645,lng:121.288751,type:'stationery',isPure:true,note:'06/26 已確認是純點',icon:'📐',color:C.pure},
+  {id:1825,name:'漢堡',lat:24.9583115,lng:121.2925726,type:'burger',isPure:false,note:'06/26 非純點・漢堡+餐廳',detail:'非純點・漢堡+餐廳',icon:'🍔',color:C.blue},
+  {id:1826,name:'壽司',lat:24.9021969,lng:121.2760775,type:'sushi',isPure:true,note:'06/26 已確認是純點',icon:'🍣',color:C.teal},
+  {id:1827,name:'甜點',lat:24.8845204,lng:121.287072,type:'dessert',isPure:false,note:'06/26 非純點・餐廳+甜點',detail:'非純點・餐廳+甜點',icon:'🍰',color:C.blue},
+  {id:1828,name:'森林',lat:24.9345218,lng:121.2546887,type:'forest',isPure:true,note:'06/23 已確認是純點',icon:'🌲',color:'#2E7D32'},
+  {id:1829,name:'森林',lat:24.9785257,lng:121.1930459,type:'forest',isPure:true,note:'06/23 已確認是純點',icon:'🌲',color:'#2E7D32'},
+  {id:1830,name:'山丘',lat:24.953106,lng:121.164808,type:'hill',isPure:true,note:'06/23 已確認是純點',icon:'⛰️',color:C.blue},
+  {id:1831,name:'森林',lat:24.9535659,lng:121.1663884,type:'forest',isPure:true,note:'06/23 已確認是純點',icon:'🌲',color:'#2E7D32'},
+  {id:1832,name:'山丘',lat:24.964181,lng:121.138917,type:'hill',isPure:true,note:'06/23 已確認是純點',icon:'⛰️',color:C.blue},
+  {id:1833,name:'森林',lat:25.024578,lng:121.293234,type:'forest',isPure:true,note:'06/23 已確認是純點',icon:'🌲',color:'#2E7D32'},
+  {id:1834,name:'森林',lat:25.0165033,lng:121.2212777,type:'forest',isPure:true,note:'06/23 已確認是純點',icon:'🌲',color:'#2E7D32'},
+  {id:1835,name:'山丘',lat:24.992545,lng:121.06535,type:'hill',isPure:true,note:'06/24 已確認是純點',icon:'⛰️',color:C.blue},
+  {id:1836,name:'山丘',lat:25.00215,lng:121.050067,type:'hill',isPure:true,note:'06/24 已確認是純點',icon:'⛰️',color:C.blue},
+  {id:1837,name:'山丘',lat:25.0603444,lng:121.2013217,type:'hill',isPure:true,note:'06/24 已確認是純點',icon:'⛰️',color:C.blue,addr:'大園尖山'},
+  {id:1838,name:'森林',lat:25.0377482,lng:121.2317429,type:'forest',isPure:true,note:'06/24 已確認是純點',icon:'🌲',color:'#2E7D32'},
+  {id:1839,name:'貝殼',lat:25.1196398,lng:121.2427766,type:'shell',isPure:true,note:'06/24 已確認是純點',icon:'🐚',color:C.cyan},
+  {id:1840,name:'山丘',lat:24.9040161,lng:121.1472178,type:'hill',isPure:true,note:'06/26 已確認是純點',icon:'⛰️',color:C.blue},
+  {id:1841,name:'貝殼',lat:25.0485871,lng:121.0767177,type:'shell',isPure:true,note:'06/26 已確認是純點',icon:'🐚',color:C.cyan},
+  {id:1842,name:'森林',lat:25.0230636,lng:121.3090265,type:'forest',isPure:true,note:'06/24 已確認是純點',icon:'🌲',color:'#2E7D32'},
+  {id:1843,name:'森林',lat:24.9803786,lng:121.3135046,type:'forest',isPure:true,note:'06/25 已確認是純點',icon:'🌲',color:'#2E7D32'},
+  {id:1844,name:'森林',lat:24.9250118,lng:121.2581384,type:'forest',isPure:true,note:'06/25 已確認是純點',icon:'🌲',color:'#2E7D32'},
+  {id:1845,name:'山丘',lat:24.846397,lng:121.237527,type:'hill',isPure:true,note:'06/26 已確認是純點',icon:'⛰️',color:C.blue},
+  {id:1846,name:'森林',lat:24.8447154,lng:121.2487063,type:'forest',isPure:true,note:'06/26 已確認是純點',icon:'🌲',color:'#2E7D32'},
+  {id:1847,name:'山丘',lat:24.841007,lng:121.1962334,type:'hill',isPure:true,note:'06/26 已確認是純點',icon:'⛰️',color:C.blue},
+  {id:1848,name:'森林',lat:24.9105836,lng:121.1806715,type:'forest',isPure:true,note:'06/26 已確認是純點',icon:'🌲',color:'#2E7D32'},
+  {id:1849,name:'森林',lat:24.8961947,lng:121.1993337,type:'forest',isPure:true,note:'06/26 已確認是純點',icon:'🌲',color:'#2E7D32'},
+  {id:1850,name:'森林',lat:24.8741432,lng:121.2090136,type:'forest',isPure:true,note:'06/26 已確認是純點',icon:'🌲',color:'#2E7D32'},
+  {id:1851,name:'森林',lat:24.8682183,lng:121.2938867,type:'forest',isPure:true,note:'06/26 已確認是純點',icon:'🌲',color:'#2E7D32'},
+  {id:1852,name:'路邊',lat:24.9571896,lng:121.2365796,type:'roadside',isPure:true,note:'06/23 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1853,name:'路邊',lat:24.9515329,lng:121.2243168,type:'roadside',isPure:true,note:'06/23 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1854,name:'路邊',lat:24.9443755,lng:121.2209846,type:'roadside',isPure:true,note:'06/23 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1855,name:'路邊',lat:24.9501247,lng:121.2208628,type:'roadside',isPure:true,note:'06/23 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1856,name:'路邊',lat:24.9634089,lng:121.2208961,type:'roadside',isPure:true,note:'06/23 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1857,name:'路邊',lat:24.967345,lng:121.22889,type:'roadside',isPure:true,note:'06/23 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1858,name:'路邊',lat:24.9756424,lng:121.2344432,type:'roadside',isPure:true,note:'06/23 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1859,name:'路邊',lat:24.9577873,lng:121.210423,type:'roadside',isPure:true,note:'06/26 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1860,name:'路邊',lat:24.9507658,lng:121.2459579,type:'roadside',isPure:true,note:'06/23 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1861,name:'路邊',lat:24.9419023,lng:121.247154,type:'roadside',isPure:true,note:'06/23 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1862,name:'路邊',lat:24.9335839,lng:121.248021,type:'roadside',isPure:true,note:'06/23 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1863,name:'路邊',lat:24.9308086,lng:121.2558534,type:'roadside',isPure:true,note:'06/23 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1864,name:'路邊',lat:24.9567662,lng:121.1726369,type:'roadside',isPure:true,note:'06/23 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1865,name:'路邊',lat:24.9614519,lng:121.1670017,type:'roadside',isPure:true,note:'06/23 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1866,name:'路邊',lat:24.9509552,lng:121.1927018,type:'roadside',isPure:true,note:'06/23 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1867,name:'路邊',lat:25.0125986,lng:121.204939,type:'roadside',isPure:true,note:'06/23 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1868,name:'路邊',lat:25.0143772,lng:121.2197691,type:'roadside',isPure:true,note:'06/23 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1869,name:'路邊',lat:24.965915,lng:121.1524742,type:'roadside',isPure:true,note:'06/23 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1870,name:'水邊',lat:24.9667523,lng:121.1515349,type:'water',isPure:true,note:'06/23 已確認是純點',icon:'💧',color:C.pure},
+  {id:1871,name:'路邊',lat:24.9745111,lng:121.1034374,type:'roadside',isPure:true,note:'06/24 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1872,name:'牙刷',lat:24.9740553,lng:121.1034397,type:'toothbrush',isPure:true,note:'06/24 已確認是純點',addr:'停車場對面',icon:'🪥',color:C.pure},
+  {id:1873,name:'路邊',lat:25.0409251,lng:121.1416614,type:'roadside',isPure:true,note:'06/24 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1874,name:'路邊',lat:25.0463099,lng:121.135716,type:'roadside',isPure:true,note:'06/24 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1875,name:'路邊',lat:25.0678936,lng:121.187496,type:'roadside',isPure:true,note:'06/24 已確認是純點',addr:'國巨洋傘文創園區',icon:'🛣️',color:C.pure},
+  {id:1876,name:'路邊',lat:25.0584409,lng:121.1969332,type:'roadside',isPure:true,note:'06/24 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1877,name:'路邊',lat:25.0612314,lng:121.1978527,type:'roadside',isPure:true,note:'06/24 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1878,name:'路邊',lat:25.0559283,lng:121.2928239,type:'roadside',isPure:true,note:'06/24 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1879,name:'路邊',lat:25.0325152,lng:121.3031751,type:'roadside',isPure:true,note:'06/24 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1880,name:'路邊',lat:25.0196109,lng:121.309573,type:'roadside',isPure:true,note:'06/24 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1881,name:'路邊',lat:25.0080263,lng:121.3218239,type:'roadside',isPure:true,note:'06/24 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1882,name:'路邊',lat:25.0113421,lng:121.3038399,type:'roadside',isPure:true,note:'06/25 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1883,name:'路邊',lat:25.0182479,lng:121.306454,type:'roadside',isPure:true,note:'06/25 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1884,name:'路邊',lat:25.0120827,lng:121.2944116,type:'roadside',isPure:true,note:'06/25 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1885,name:'路邊',lat:25.0034569,lng:121.2995637,type:'roadside',isPure:true,note:'06/25 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1886,name:'路邊',lat:24.9978054,lng:121.3015815,type:'roadside',isPure:true,note:'06/25 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1887,name:'路邊',lat:25.0039571,lng:121.2904855,type:'roadside',isPure:true,note:'06/25 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1888,name:'路邊',lat:24.9103481,lng:121.1606346,type:'roadside',isPure:true,note:'06/26 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1889,name:'路邊',lat:24.9827948,lng:121.3166812,type:'roadside',isPure:true,note:'06/25 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1890,name:'路邊',lat:24.987884,lng:121.2905229,type:'roadside',isPure:true,note:'06/25 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1891,name:'路邊',lat:24.9784098,lng:121.255441,type:'roadside',isPure:true,note:'06/25 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1892,name:'路邊',lat:24.8695082,lng:121.2165124,type:'roadside',isPure:true,note:'06/26 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1893,name:'路邊',lat:24.9163532,lng:121.2081685,type:'roadside',isPure:true,note:'06/26 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1894,name:'路邊',lat:24.9666741,lng:121.2934295,type:'roadside',isPure:true,note:'06/26 已確認是純點',icon:'🛣️',color:C.pure},
+  {id:1895,name:'路邊',lat:24.9977401,lng:121.5214808,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1896,name:'路邊',lat:24.9864813,lng:121.5100932,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1897,name:'路邊',lat:25.0151848,lng:121.4844882,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1898,name:'路邊',lat:25.0314302,lng:121.4693677,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1899,name:'路邊',lat:25.065209,lng:121.494624,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1900,name:'路邊',lat:24.9696978,lng:121.5350301,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1901,name:'路邊',lat:25.070595,lng:121.5007259,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1902,name:'路邊',lat:25.0673336,lng:121.514414,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1903,name:'路邊',lat:25.0730171,lng:121.5124209,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1904,name:'路邊',lat:25.0397807,lng:121.5422831,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1905,name:'路邊',lat:25.0340345,lng:121.4961484,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1906,name:'路邊',lat:25.0335444,lng:121.4390298,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1907,name:'路邊',lat:25.0844435,lng:121.5516891,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1908,name:'路邊',lat:25.0398156,lng:121.5274554,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1909,name:'路邊',lat:25.0463702,lng:121.440676,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1910,name:'路邊',lat:25.0290139,lng:121.4761261,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1911,name:'路邊',lat:25.068934,lng:121.590132,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1912,name:'路邊',lat:25.0861558,lng:121.4646107,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1913,name:'路邊',lat:25.03367,lng:121.571814,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1914,name:'路邊',lat:25.024985,lng:121.515449,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1915,name:'路邊',lat:25.06761,lng:121.371368,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1916,name:'路邊',lat:25.03883,lng:121.512897,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1917,name:'路邊',lat:25.062561,lng:121.371324,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1918,name:'路邊',lat:25.0968804,lng:121.7212998,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1919,name:'路邊',lat:24.9927047,lng:121.5004628,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1920,name:'路邊',lat:25.0399285,lng:121.5698777,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1921,name:'路邊',lat:25.070114,lng:121.359975,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1922,name:'路邊',lat:25.00261,lng:121.617625,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1923,name:'路邊',lat:25.0430581,lng:121.454744,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1924,name:'路邊',lat:24.9763717,lng:121.5336701,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1925,name:'路邊',lat:25.0472894,lng:121.570473,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
+  {id:1926,name:'路邊',lat:25.0391215,lng:121.4355866,type:'roadside',isPure:true,note:'非官方回報・雨天可掃雨天飾品',icon:'🛣️',color:C.pure},
 ];
 
 // ══════════════════════════════════════
@@ -3379,7 +4158,11 @@ function closeDisclaimer(){
 
 layout();
 renderTypeButtons();
+loadDistCache();
+applyDistToSpots();
 render();
+// 載入後 3 秒在背景開始補齊行政區資料（已快取的不會重查）
+setTimeout(function(){ if(typeof startDistGeocode==='function') startDistGeocode(); }, 3000);
 updateMissBadge();
 setTimeout(function(){layout();map.invalidateSize(true);},200);
 </script>
