@@ -83,11 +83,28 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
 #list-controls select:focus,#list-controls input:focus{border-color:#3d8a3c;}
 .lc-select-wrap{position:relative;flex:1;min-width:0;}
 .lc-select-wrap::after{content:'▾';position:absolute;right:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:#7a8c76;font-size:12px;}
+/* 第一層：資料屬性（互斥） */
 #list-status{display:flex;gap:6px;}
 #list-status button{flex:1;padding:7px 2px;font-size:13px;border:1.5px solid #cde0ca;background:#fff;border-radius:9px;color:#3a5a36;cursor:pointer;}
 #list-status button.on{background:#e6f4e4;border-color:#3d8a3c;color:#1a2e18;font-weight:600;}
-#list-count-bar{flex-shrink:0;padding:7px 14px;font-size:13px;color:#5a7a55;background:#eef5ec;border-bottom:1px solid #e2ece0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+/* 第二層：圖鑑狀態開關（可疊加） */
+#list-toggles{display:flex;gap:8px;margin-top:2px;padding-top:8px;border-top:1px dashed #dbe8d7;}
+#list-want-toggle{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;font-size:13px;font-weight:600;border:1.5px solid #f0b9c4;background:#fff;border-radius:9px;color:#b03a55;cursor:pointer;}
+#list-want-toggle.on{background:#ffe2e9;border-color:#e8617e;color:#a31f3f;}
+/* 筆數列 */
+#list-count-bar{flex-shrink:0;padding:7px 14px;font-size:13px;color:#5a7a55;background:#eef5ec;border-bottom:1px solid #e2ece0;display:flex;justify-content:space-between;align-items:center;gap:8px;}
+#list-count{font-weight:700;color:#3a5a36;}
 #list-reset{background:none;border:none;color:#3d8a3c;font-size:13px;cursor:pointer;text-decoration:underline;}
+/* 動作列：對篩選結果做事 */
+#list-action-bar{flex-shrink:0;display:flex;flex-direction:column;gap:8px;padding:8px 12px;background:#fff;border-bottom:1px solid #e2ece0;}
+#list-showmap{width:100%;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;background:#5BAD5A;border:none;color:#fff;font-size:15px;font-weight:700;cursor:pointer;border-radius:9px;padding:12px 14px;box-shadow:0 1px 3px rgba(91,173,90,.35);}
+#list-showmap:active{background:#4f9d4e;}
+#list-showmap:disabled{background:#bcd6bb;box-shadow:none;cursor:default;}
+#list-sortdist{align-self:flex-start;display:inline-flex;align-items:center;gap:5px;background:#fff;border:1.5px solid #cde0ca;color:#3a5a36;font-size:13px;font-weight:700;cursor:pointer;border-radius:9px;padding:9px 14px;}
+/* 結果少時收窄動作列：橫排小按鈕 */
+#list-action-bar.compact{flex-direction:row;align-items:center;gap:8px;padding:7px 12px;}
+#list-action-bar.compact #list-showmap{width:auto;flex:1;font-size:13px;padding:9px 12px;}
+#list-action-bar.compact #list-sortdist{align-self:auto;flex-shrink:0;}
 
 /* 補齊地址 modal */
 #geofill-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1200;display:none;align-items:center;justify-content:center;padding:18px;}
@@ -104,19 +121,21 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
 .gf-btn:disabled{opacity:.45;cursor:not-allowed;}
 #gf-output{width:100%;height:90px;border:1px solid #d4e6d0;border-radius:10px;padding:8px;font-size:.66rem;font-family:monospace;resize:vertical;margin-bottom:10px;box-sizing:border-box;}
 #list-results{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 10px 24px;}
-.li{background:#fff;border:1px solid #e6efe4;border-radius:12px;padding:11px 12px;margin-bottom:8px;cursor:pointer;transition:all .12s;overflow:hidden;min-width:0;}
+.li{background:#fff;border:1px solid #e6efe4;border-radius:12px;padding:10px 12px;margin-bottom:7px;cursor:pointer;transition:all .12s;overflow:hidden;min-width:0;}
 .li:active{background:#f0f7ee;transform:scale(.995);}
-.li-top{display:flex;align-items:center;gap:8px;margin-bottom:3px;}
-.li-icon{font-size:20px;flex-shrink:0;}
+.li-top{display:flex;align-items:center;gap:8px;margin-bottom:2px;}
+.li-icon{font-size:19px;flex-shrink:0;}
 .li-name{font-weight:600;font-size:15px;color:#1a2e18;flex:1;line-height:1.25;min-width:0;word-break:break-word;overflow-wrap:anywhere;}
 .li-badge{font-size:11px;color:#fff;border-radius:6px;padding:2px 7px;flex-shrink:0;}
-.li-meta{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 2px;}
+.li-meta{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:3px 0;}
 .li-chip{font-size:11px;background:#eef5ec;color:#4a6a45;border-radius:6px;padding:2px 7px;}
 .li-chip.dist{background:#e8f0fb;color:#2c5a8c;}
+.li-chip.date{background:transparent;color:#9aa896;padding:2px 0;}
 .li-note{font-size:12.5px;color:#5a6a56;line-height:1.45;word-break:break-word;overflow-wrap:anywhere;}
-.li-addr{display:block;width:auto;writing-mode:horizontal-tb;font-size:12px;color:#7a8c76;margin-top:3px;line-height:1.4;word-break:break-word;overflow-wrap:anywhere;}
+.li-foot{display:flex;align-items:center;gap:8px;margin-top:3px;min-width:0;}
+.li-addr{flex:1;min-width:0;writing-mode:horizontal-tb;font-size:12px;color:#7a8c76;line-height:1.4;word-break:break-word;overflow-wrap:anywhere;}
 .li-addr-loading{color:#b0bbac;}
-.li-nav{display:inline-flex;align-items:center;gap:4px;margin-top:7px;padding:5px 12px;background:#4285F4;color:#fff;border-radius:8px;text-decoration:none;font-size:12px;font-weight:700;}
+.li-nav{flex-shrink:0;display:inline-flex;align-items:center;gap:4px;padding:5px 11px;background:#4285F4;color:#fff;border-radius:8px;text-decoration:none;font-size:12px;font-weight:700;}
 .li-nav:active{background:#3367d6;}
 #list-empty{text-align:center;color:#9aaa95;padding:40px 20px;font-size:14px;}
 
@@ -250,6 +269,8 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
 
 /* ── 回報系統 ── */
 .pu-report{margin-top:8px;padding-top:8px;border-top:1px dashed #e0dbd4;}
+.pu-problem{background:#fff3f3;border:1px solid #ffcaca;border-radius:8px;padding:7px 10px;margin:6px 0;color:#c0392b;font-size:.72rem;font-weight:700;line-height:1.4;}
+.pu-problem-detail{color:#9a6b6b;font-weight:500;font-size:.66rem;margin-top:3px;}
 .pu-report-toggle{font-size:.68rem;font-weight:700;color:#6b7c68;background:#f4f6f2;border:1px solid #e0e6dc;border-radius:8px;padding:6px 9px;cursor:pointer;text-align:center;}
 .pu-report-toggle:hover{background:#eaf1e6;color:#3d8a3c;}
 .pu-report-collapse{font-size:.62rem;color:#9aa69a;text-align:center;margin-top:6px;cursor:pointer;}
@@ -540,17 +561,18 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
       <button class="on" data-st="all" onclick="setListStatus('all',this)">全部</button>
       <button data-st="pure" onclick="setListStatus('pure',this)">✅ 純點</button>
       <button data-st="notpure" onclick="setListStatus('notpure',this)">🔀 非純點</button>
-      <button data-st="want" onclick="setListStatus('want',this)">❤️ 我缺的</button>
+    </div>
+    <div id="list-toggles">
+      <button id="list-want-toggle" onclick="toggleListWant(this)">❤️ 只看我缺的</button>
     </div>
   </div>
   <div id="list-count-bar">
     <span id="list-count">共 0 筆</span>
-    <span style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-      <button id="list-sortdist" onclick="toggleListSortDist()" style="display:inline-flex;align-items:center;gap:5px;background:#fff;border:1.5px solid #cde0ca;color:#3a5a36;font-size:13px;font-weight:700;cursor:pointer;border-radius:8px;padding:6px 12px;">📏 距離排序</button>
-      <button id="list-showmap" onclick="showListOnMap()" style="display:inline-flex;align-items:center;gap:5px;background:#5BAD5A;border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;border-radius:8px;padding:7px 14px;box-shadow:0 1px 3px rgba(91,173,90,.35);">📍 在地圖顯示</button>
-      <button id="list-geofill" onclick="openGeoFill()" style="background:none;border:none;color:#9a7400;font-size:13px;cursor:pointer;text-decoration:underline;">🛠️ 補齊地址</button>
-      <button id="list-reset" onclick="resetListFilters()">清除篩選</button>
-    </span>
+    <button id="list-reset" onclick="resetListFilters()">清除篩選</button>
+  </div>
+  <div id="list-action-bar">
+    <button id="list-showmap" onclick="showListOnMap()">📍 在地圖顯示這 <span id="showmap-count">0</span> 個點</button>
+    <button id="list-sortdist" onclick="toggleListSortDist()">📏 距離排序</button>
   </div>
   <div id="list-results"><div id="list-empty">無符合結果</div></div>
 </div>
@@ -746,6 +768,30 @@ html,body{height:100%;font-family:'Noto Sans TC',system-ui,sans-serif;background
 // 把拿到的網址（長得像 https://script.google.com/macros/s/xxxxx/exec）貼到下面，
 // 回報會自動送出並累積在你的 Google 試算表裡
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbz2jh3vLUffuhFRNVPA9RvrfSllJeRtH_1vKo07MGSB0ZbgVgAr_1TdxHUVmmRCrzg/exec';
+
+// 問題回報旗標：{ spotId: { problem:N, types:{類型:次數} } }
+var reportFlags = {};
+// 累積幾次「問題類」回報才在地圖上標記為待查
+var PROBLEM_THRESHOLD = 2;
+
+// 從 GAS 抓各點問題回報計數，套用到地圖標記與彈窗
+function loadReportFlags(){
+  if(!GAS_URL || GAS_URL.indexOf('YOUR_SCRIPT_ID')!==-1) return;
+  fetch(GAS_URL+'?action=resync',{headers:{'Accept':'application/json'}})
+    .then(function(r){return r.json();})
+    .then(function(j){
+      if(!j || !j.ok || !j.counts) return;
+      reportFlags={};
+      Object.keys(j.counts).forEach(function(id){
+        var c=j.counts[id];
+        // 相容舊格式（純數字）與新格式（物件）
+        if(typeof c==='number'){ reportFlags[id]={problem:0,types:{}}; }
+        else { reportFlags[id]={problem:c.problem||0,types:c.types||{}}; }
+      });
+      if(typeof refreshMarkers==='function') refreshMarkers();
+    })
+    .catch(function(e){ console.warn('問題回報計數載入失敗',e); });
+}
 
 // 回報問題的類型
 var REPORT_TYPES = {
@@ -3239,6 +3285,10 @@ var map=L.map('map',{
   wheelPxPerZoomLevel:120
 });
 window._map=map;
+// 點地圖空白處 / 拖曳地圖 → 自動收起篩選抽屜（marker 點擊不會觸發 map click，故 popup 不受影響）
+function closeDrawerIfOpen(){ if(drawerOpen) toggleDrawer(); }
+map.on('dragstart',closeDrawerIfOpen);
+map.on('click',closeDrawerIfOpen);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
   attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   maxZoom:19,
@@ -3657,7 +3707,7 @@ function finalizeReport(root,id,type,method){
     var rt=REPORT_TYPES[type];
     var dv=root.querySelector('.pu-rview-done');
     var dt=dv && dv.querySelector('.pu-done-text');
-    if(dt) dt.textContent='✅ 你已回報：'+rt.icon+' '+rt.label;
+    if(dt) dt.textContent='✅ 已送出，感謝回報！';
     reportShow(root,'done');
   } else {
     refreshPopupFor(id);
@@ -3729,9 +3779,13 @@ function mkIcon(s){
   }
   var opacity = isComplete && !isFocus ? '0.45' : '1';
   var bg = isComplete && !isFocus ? '#b0b0b0' : s.color;
+  var pf=reportFlags[s.id];
+  var warnBadge=(pf && pf.problem>=PROBLEM_THRESHOLD)
+    ? '<div style="position:absolute;top:-6px;right:-6px;width:15px;height:15px;border-radius:50%;background:#e84040;border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1;box-shadow:0 1px 2px rgba(0,0,0,.3);">⚠️</div>'
+    : '';
   return L.divIcon({
     className:'pk-marker',
-    html:'<div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+bg+';border:'+border+';display:flex;align-items:center;justify-content:center;font-size:'+(sz>=34?16:12)+'px;opacity:'+opacity+';">'+s.icon+'</div>',
+    html:'<div style="position:relative;width:'+sz+'px;height:'+sz+'px;"><div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+bg+';border:'+border+';display:flex;align-items:center;justify-content:center;font-size:'+(sz>=34?16:12)+'px;opacity:'+opacity+';">'+s.icon+'</div>'+warnBadge+'</div>',
     iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]
   });
 }
@@ -4000,6 +4054,14 @@ function mkPopupHtml(s){
   var total=typeTotalColors(realType(s.type));
   var statusHtml='<div class="pu-status" onclick="jumpToDex(\''+realType(s.type)+'\')" style="cursor:pointer;background:'+(cnt===total?'#d4edda':'#fff3cd')+';color:'+(cnt===total?'#3d8a3c':'#856404')+'">'+
     (cnt===total?'✅':'📖')+' 圖鑑進度 '+cnt+'/'+total+' 色 ›</div>';
+  // 問題回報警示（其他玩家回報這個點可能有問題）
+  var problemHtml='';
+  var pf=reportFlags[s.id];
+  if(pf && pf.problem>=PROBLEM_THRESHOLD){
+    var detailStr=Object.keys(pf.types).map(function(k){return k+' ×'+pf.types[k];}).join('、');
+    problemHtml='<div class="pu-problem">⚠️ 已有 '+pf.problem+' 位玩家回報這個點可能有問題'+
+      (detailStr?'<div class="pu-problem-detail">'+detailStr+'</div>':'')+'</div>';
+  }
   var navUrl='https://www.google.com/maps/dir/?api=1&destination='+s.lat+','+s.lng+'&travelmode=two-wheeler';
   var navBtn='<a href="'+navUrl+'" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:5px;margin-top:6px;padding:8px;background:#4285F4;color:#fff;border-radius:9px;text-decoration:none;font-size:.76rem;font-weight:700;">🧭 Google 導航</a>';
   // 地址查詢（開啟 popup 自動查，查過會記住）
@@ -4019,6 +4081,7 @@ function mkPopupHtml(s){
   }
   return '<div class="pu"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:3px;margin-bottom:4px;"><div class="pu-badge" style="background:'+pureBg+'">'+pureLabel+'</div>'+typeFltBtn+'</div>'+
     '<div class="pu-name">'+s.name+'</div>'+
+    problemHtml+
     '<div class="pu-note">'+s.note+'</div>'+
     navBtn+coordsHtml+geoHtml+detail+tags+statusHtml+mkReportHtml(s)+'</div>';
 }
@@ -4034,6 +4097,9 @@ spots.forEach(function(s){
   markerMap[s.id]=m;
   clusterGroup.addLayer(m);
 });
+
+// 載入其他玩家的問題回報，標記可能有問題的點
+loadReportFlags();
 
 function refreshMarkers(){
   spots.forEach(function(s){
@@ -4242,6 +4308,7 @@ function flt(type,btn){
 // 📋 列表頁面（獨立於地圖篩選）
 // ══════════════════════════════════════
 var listStatus='all';
+var listWant=false;
 var listDropdownsBuilt=false;
 var listSortDist=false;
 
@@ -4327,10 +4394,19 @@ function setListStatus(st,btn){
   renderListPage();
 }
 
+function toggleListWant(btn){
+  listWant=!listWant;
+  btn.classList.toggle('on',listWant);
+  renderListPage();
+}
+
 function resetListFilters(){
   listStatus='all';
+  listWant=false;
   listSortDist=false;
   syncListSortBtn();
+  var wt=document.getElementById('list-want-toggle');
+  if(wt) wt.classList.remove('on');
   document.getElementById('list-search').value='';
   document.getElementById('list-type').value='';
   document.getElementById('list-dist').value='';
@@ -4349,7 +4425,7 @@ function listFilteredSpots(){
   return spots.filter(function(s){
     if(listStatus==='pure' && s.isPure!==true) return false;
     if(listStatus==='notpure' && s.isPure!==false) return false;
-    if(listStatus==='want' && typeFullyOwned(s.type)) return false;
+    if(listWant && typeFullyOwned(s.type)) return false;
     if(ty && realType(s.type)!==ty) return false;
     if(di && s.dist!==di) return false;
     if(q){
@@ -4426,6 +4502,12 @@ function renderListPage(){
     list.sort(function(a,b){ return a._ldist-b._ldist; });
   }
   document.getElementById('list-count').textContent='共 '+list.length+' 筆';
+  var smc=document.getElementById('showmap-count');
+  if(smc) smc.textContent=list.length;
+  var smBtn=document.getElementById('list-showmap');
+  if(smBtn) smBtn.disabled=(list.length===0);
+  var actBar=document.getElementById('list-action-bar');
+  if(actBar) actBar.classList.toggle('compact', list.length>0 && list.length<=5);
   if(list.length===0){
     box.innerHTML='<div id="list-empty">無符合結果</div>';
     return;
@@ -4456,12 +4538,13 @@ function renderListPage(){
     div.dataset.cached=(hasAddr||geoCache[geoKey])?'1':'0';
     var navUrl='https://www.google.com/maps/dir/?api=1&destination='+s.lat+','+s.lng+'&travelmode=two-wheeler';
     var navBtn='<a class="li-nav" href="'+navUrl+'" target="_blank" rel="noopener" onclick="event.stopPropagation();">🧭 導航</a>';
+    var noteTxt=(s.note||'').replace(/\s*已確認是純點\s*/,'').trim();
     div.innerHTML=
       '<div class="li-top"><span class="li-icon">'+s.icon+'</span>'+
       '<span class="li-name">'+s.name+'</span>'+
       '<span class="li-badge" style="background:'+pureBg+'">'+pureLabel+'</span></div>'+
-      '<div class="li-meta">'+chips+'</div>'+
-      '<div class="li-note">'+(s.note||'')+'</div>'+addrLine+navBtn;
+      '<div class="li-meta">'+chips+(noteTxt?'<span class="li-chip date">'+noteTxt+'</span>':'')+'</div>'+
+      '<div class="li-foot">'+addrLine+navBtn+'</div>';
     div.addEventListener('click',function(){ listJumpToSpot(s); });
     frag.appendChild(div);
   });
